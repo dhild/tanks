@@ -1,0 +1,6 @@
+[package]
+name = "tanks-rs"
+version = "0.1.0"
+authors = ["D. Ryan Hild <d.ryan.hild@gmail.com>"]
+
+[dependencies]
