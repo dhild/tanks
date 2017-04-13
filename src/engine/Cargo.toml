@@ -1,13 +1,16 @@
 [package]
-name = "tanks"
+name = "engine"
 version = "0.1.0"
 authors = ["D. Ryan Hild <d.ryan.hild@gmail.com>"]
 
 [dependencies]
-log4rs = "^0.6"
 log = "^0.3"
-engine = { path = "src/engine", version = "0.1" }
 gfx = "0.14"
+gfx_window_sdl = "0.5"
+sdl2 = "0.28"
+specs = "0.8"
+cgmath = "0.12"
+rand = "0.3"
 
 [features]
 default = []

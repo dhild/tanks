@@ -1,0 +1,18 @@
+refresh_rate: 30 seconds
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{M} {l} - {m}{n}"
+      #pattern: "{d} {M} [{T}] {l} - {m}{n}"
+root:
+  level: debug
+  appenders:
+    - stdout
+loggers:
+  gfx_device_gl:
+    level: info
+  ticketed_lock:
+    level: info
+  ast_rs:
+    level: debug
