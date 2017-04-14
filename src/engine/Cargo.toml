@@ -6,6 +6,7 @@ authors = ["D. Ryan Hild <d.ryan.hild@gmail.com>"]
 [dependencies]
 log = "^0.3"
 gfx = "0.14"
+gfx_device_gl = "0.13"
 gfx_window_sdl = "0.5"
 sdl2 = "0.28"
 specs = "0.8"
