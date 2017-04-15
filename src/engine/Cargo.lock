@@ -2,20 +2,13 @@
 name = "engine"
 version = "0.1.0"
 dependencies = [
- "cgmath 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gfx 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "gfx_device_gl 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gfx_window_sdl 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "specs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "approx"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "atom"
@@ -31,17 +24,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "bitflags"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "cgmath"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "approx 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.1.37 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "draw_state"
@@ -212,11 +194,6 @@ version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "rustc-serialize"
-version = "0.3.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
 name = "sdl2"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -300,11 +277,9 @@ dependencies = [
 ]
 
 [metadata]
-"checksum approx 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "08abcc3b4e9339e33a3d0a5ed15d84a687350c05689d825e0f6655eef9e76a94"
 "checksum atom 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "4cd7b80cba09d9c6679f5ac66af2e5eb9c17fa1b914f142d690b069ba51eacaf"
 "checksum bitflags 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "72cd7314bd4ee024071241147222c706e80385a1605ac7d4cd2fcc339da2ae46"
 "checksum bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "aad18937a628ec6abcd26d1489012cc0e18c21798210f491af69ded9b881106d"
-"checksum cgmath 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "232472604dbad61c384edfc4d833315d487894826856836b7227b37fe3abe02b"
 "checksum draw_state 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1596fcda8b7c1ec84f68d5d09dad7ad01266a1793214d257deb1f6f7d98e8185"
 "checksum fnv 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6cc484842f1e2884faf56f529f960cc12ad8c71ce96cc7abba0a067c98fee344"
 "checksum gfx 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)" = "24667dd5df455d86b0d3ec0a485b0b564ec2231133443750a81dc99cc149eb86"
@@ -327,7 +302,6 @@ dependencies = [
 "checksum pulse 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "655612b6c8d96a8a02f331fe296cb4f925b68e87c1d195544675abca2d9b9af0"
 "checksum rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "022e0636ec2519ddae48154b028864bdce4eaf7d35226ab8e65c611be97b189d"
 "checksum redox_syscall 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)" = "29dbdfd4b9df8ab31dec47c6087b7b13cbf4a776f335e4de8efba8288dda075b"
-"checksum rustc-serialize 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)" = "684ce48436d6465300c9ea783b6b14c4361d6b8dcbb1375b486a69cc19e2dfb0"
 "checksum sdl2 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)" = "29301273acc73295e4864a069bf9ad791ef0f819f4fc2a4653aa55818f1cbb05"
 "checksum sdl2-sys 0.27.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8d9f87e3d948f94f2d8688970422f49249c20e97f8f3aad76cb8729901d4eb10"
 "checksum specs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "336ad0959bd02a1acadf987984a26e02a1322e1dc6f77acdb1fd206557f33d2e"

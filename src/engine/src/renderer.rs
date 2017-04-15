@@ -1,11 +1,6 @@
 use gfx;
 use std::sync::mpsc;
 
-pub mod flat;
-
-pub type ColorFormat = gfx::format::Rgba8;
-pub type DepthFormat = gfx::format::DepthStencil;
-
 #[derive(Debug)]
 pub struct EncoderQueue<D: gfx::Device> {
     pub sender: mpsc::Sender<gfx::Encoder<D::Resources, D::CommandBuffer>>,

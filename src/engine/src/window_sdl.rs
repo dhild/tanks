@@ -1,40 +1,40 @@
 use super::RunStatus;
-use draw::{ColorFormat, DepthFormat};
 use game::{Game, GameFunctions, WindowFunctions};
-use gfx_device_gl;
+use gfx;
 use gfx_window_sdl;
 use sdl2;
 
 struct SDLWindow {
     window: sdl2::video::Window,
     event_pump: sdl2::EventPump,
-    event_handler: Box<Fn(sdl2::event::Event) -> RunStatus>,
 }
 
-impl WindowFunctions<gfx_window_sdl::Device, gfx_window_sdl::Factory> for SDLWindow {
-    fn create_command_buffer(&mut self,
-                             factory: &mut gfx_window_sdl::Factory)
-                             -> gfx_device_gl::CommandBuffer {
-        factory.create_command_buffer()
-    }
+impl WindowFunctions<gfx_window_sdl::Device> for SDLWindow {
     fn swap_window(&mut self) {
         self.window.gl_swap_window();
     }
     fn poll_events(&mut self) -> RunStatus {
+        use sdl2::event::Event;
+        use sdl2::keyboard::Keycode;
         for event in self.event_pump.poll_iter() {
-            let status = (self.event_handler)(event);
-            if status != RunStatus::Running {
-                return status;
+            match event {
+                Event::Quit { .. } |
+                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => return RunStatus::Quit,
+                _ => (),
             }
         }
         RunStatus::Running
     }
 }
 
-
-pub fn run<E, GF>(title: &str, event_handler: E, game_functions: GF) -> RunStatus
-    where E: 'static + Fn(sdl2::event::Event) -> RunStatus,
-          GF: 'static + Send + GameFunctions
+pub fn run<CF, DF, GF>(title: &str, game_functions: GF) -> RunStatus
+    where GF: 'static + Send + GameFunctions<gfx_window_sdl::Device, gfx_window_sdl::Factory, CF>,
+          CF: Clone + gfx::format::Formatted,
+          DF: gfx::format::Formatted,
+          <CF as gfx::format::Formatted>::Surface: gfx::format::RenderSurface,
+          <CF as gfx::format::Formatted>::Channel: gfx::format::RenderChannel,
+          <DF as gfx::format::Formatted>::Surface: gfx::format::DepthSurface,
+          <DF as gfx::format::Formatted>::Channel: gfx::format::RenderChannel
 {
     let sdl_context = sdl2::init().expect("Unable to create SDL context");
     let video = sdl_context
@@ -51,14 +51,12 @@ pub fn run<E, GF>(title: &str, event_handler: E, game_functions: GF) -> RunStatu
     builder.opengl();
 
     let (window, _gl_context, device, factory, rtv, _dsv) =
-                                gfx_window_sdl::init::<ColorFormat, DepthFormat>(builder)
-                                .expect("Unable to create a window");
+        gfx_window_sdl::init::<CF, DF>(builder).expect("Unable to create a window");
 
     let window = SDLWindow {
         window: window,
         event_pump: event_pump,
-        event_handler: Box::new(event_handler),
     };
 
-    Game::new(device, factory, rtv).run(game_functions, window)
+    Game::new(device, factory, rtv).run(game_functions, window, |f| f.create_command_buffer())
 }

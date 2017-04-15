@@ -1,15 +1,11 @@
+extern crate gfx;
+extern crate gfx_window_sdl;
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate gfx;
-extern crate gfx_device_gl;
-extern crate gfx_window_sdl;
 extern crate sdl2;
-extern crate cgmath;
 extern crate specs;
 
-mod components;
-mod draw;
+mod renderer;
 mod game;
 mod window_sdl;
 
@@ -19,8 +15,8 @@ pub enum RunStatus {
     Quit,
 }
 
-pub use draw::flat as flat;
+pub type Delta = f32;
 
-pub use components::{Delta, Position};
 pub use game::GameFunctions;
+pub use renderer::EncoderQueue;
 pub use window_sdl::run;

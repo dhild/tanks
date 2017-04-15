@@ -8,7 +8,6 @@ log4rs = "^0.6"
 log = "^0.3"
 engine = { path = "src/engine", version = "0.1" }
 gfx = "0.14"
-sdl2 = "0.28"
 cgmath = "0.12"
 specs = "0.8"
 
