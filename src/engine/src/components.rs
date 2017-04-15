@@ -6,8 +6,6 @@ pub type Point = cgmath::Point2<f32>;
 pub type Rad = cgmath::Rad<f32>;
 pub type Matrix4 = cgmath::Matrix4<f32>;
 
-pub use draw::flat::Drawable as FlatDrawable;
-
 #[derive(Debug,Clone)]
 pub struct Position {
     pub position: Point,

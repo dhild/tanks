@@ -19,6 +19,8 @@ pub enum RunStatus {
     Quit,
 }
 
+pub use draw::flat as flat;
+
 pub use components::{Delta, Position};
 pub use game::GameFunctions;
 pub use window_sdl::run;

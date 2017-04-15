@@ -32,7 +32,7 @@ impl WindowFunctions<gfx_window_sdl::Device, gfx_window_sdl::Factory> for SDLWin
 }
 
 
-pub fn run<E, GF>(title: &str, event_handler: E, game_functions: GF)
+pub fn run<E, GF>(title: &str, event_handler: E, game_functions: GF) -> RunStatus
     where E: 'static + Fn(sdl2::event::Event) -> RunStatus,
           GF: 'static + Send + GameFunctions
 {
@@ -60,5 +60,5 @@ pub fn run<E, GF>(title: &str, event_handler: E, game_functions: GF)
         event_handler: Box::new(event_handler),
     };
 
-    Game::new(device, rtv).run(factory, game_functions, window);
+    Game::new(device, factory, rtv).run(game_functions, window)
 }
