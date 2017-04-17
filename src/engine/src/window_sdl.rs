@@ -45,8 +45,11 @@ pub fn run<CF, DF, GF>(title: &str, game_functions: GF) -> RunStatus
         .expect("Unable to obtain event pump");
 
     let gl_attr = video.gl_attr();
-    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
-    gl_attr.set_context_version(4, 0);
+    #[cfg(debug_assertions)]
+    gl_attr.set_context_flags().debug().set();
+
+    //gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
+    gl_attr.set_context_version(3, 2);
     let mut builder = video.window(title, 1024, 728);
     builder.opengl();
 

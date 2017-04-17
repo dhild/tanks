@@ -2,6 +2,7 @@ use draw::*;
 use engine::{EncoderQueue, GameFunctions, RunStatus};
 use gfx;
 use specs;
+use terrain::Terrain;
 
 #[derive(Debug)]
 pub struct TanksGame;
@@ -14,7 +15,13 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
     fn setup_world(&mut self, world: &mut specs::World) {
         world.register::<Drawable>();
         world.register::<Position>();
+        world.register::<Terrain>();
+        world
+            .create_now()
+            .with(Terrain::generate(1000, 500, 10))
+            .build();
     }
+
     fn setup_planner(&mut self,
                      planner: &mut specs::Planner<f32>,
                      encoder_queue: EncoderQueue<D>,

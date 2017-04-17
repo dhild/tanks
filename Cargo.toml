@@ -10,6 +10,7 @@ engine = { path = "src/engine", version = "0.1" }
 gfx = "0.14"
 cgmath = "0.12"
 specs = "0.8"
+rand = "0.3"
 
 [features]
 default = []

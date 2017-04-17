@@ -4,6 +4,7 @@ extern crate gfx;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate rand;
 extern crate specs;
 
 extern crate engine;
@@ -19,5 +20,5 @@ fn main() {
     log4rs::init_file("src/log4rs.yaml", Default::default()).unwrap();
     debug!("Starting up....");
 
-        engine::run::<ColorFormat, DepthFormat, TanksGame>("Tanks", TanksGame {});
+    engine::run::<ColorFormat, DepthFormat, TanksGame>("Tanks", TanksGame {});
 }
