@@ -2,13 +2,16 @@ use super::ColorFormat;
 use cgmath::{Matrix4, Point2};
 use draw::components::{Drawable, Position};
 use draw::flat::DrawSystem as FlatDrawSystem;
+use draw::terrain::DrawSystem as TerrainSystem;
 use engine::EncoderQueue;
 use gfx;
 use specs;
+use terrain::Terrain;
 
 pub struct DrawSystem<D: gfx::Device> {
     render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
     flat_system: FlatDrawSystem<D>,
+    terrain_system: TerrainSystem<D>,
     encoder_queue: EncoderQueue<D>,
 }
 
@@ -19,8 +22,16 @@ impl<D: gfx::Device> DrawSystem<D> {
         DrawSystem {
             render_target_view: rtv.clone(),
             flat_system: FlatDrawSystem::new(rtv.clone()),
+            terrain_system: TerrainSystem::new(rtv.clone()),
             encoder_queue: queue,
         }
+    }
+
+    pub fn create_terrain<F>(&mut self, factory: &mut F, terrain: &Terrain) -> Drawable
+        where F: gfx::Factory<D::Resources>
+    {
+        let d = self.terrain_system.create(factory, terrain);
+        Drawable::Terrain(d)
     }
 }
 
@@ -38,6 +49,7 @@ impl<D, C> specs::System<C> for DrawSystem<D>
         for d in (&drawables).join() {
             match *d {
                 Drawable::Flat(ref d) => self.flat_system.draw(d, &mut encoder),
+                Drawable::Terrain(ref d) => self.terrain_system.draw(d, &mut encoder),
             }
         }
         // TODO: Render based on the type of drawable...
@@ -69,6 +81,7 @@ impl<C> specs::System<C> for PreDrawSystem {
         for (d, p) in (&mut drawables, &positions).join() {
             match *d {
                 Drawable::Flat(ref mut d) => d.update(self.scale * p.to_translation()),
+                Drawable::Terrain(_) => (),
             }
         }
     }

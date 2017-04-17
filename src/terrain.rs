@@ -3,7 +3,8 @@ use specs;
 
 #[derive(Debug)]
 pub struct Terrain {
-    heightmap: Vec<u16>,
+    pub max_height: usize,
+    pub heightmap: Vec<u16>,
 }
 
 impl specs::Component for Terrain {
@@ -15,7 +16,7 @@ impl Terrain {
         assert!(width > 3 && height > 3 && width < u16::max_value() as usize &&
                 height < u16::max_value() as usize);
 
-        let noise = Noise::new(width, points, height as f64 * 0.2, height as f64 * 0.8);
+        let noise = Noise::new(width, height, points);
 
         let mut hmap = Vec::with_capacity(width);
 
@@ -23,7 +24,10 @@ impl Terrain {
             hmap.push(noise.interp(x) as u16);
         }
 
-        Terrain { heightmap: hmap }
+        Terrain {
+            max_height: height,
+            heightmap: hmap,
+        }
     }
 }
 
@@ -35,7 +39,9 @@ struct Noise {
 }
 
 impl Noise {
-    fn new(width: usize, count: usize, min: f64, max: f64) -> Noise {
+    fn new(width: usize, height: usize, count: usize) -> Noise {
+        let min = (height as f64) * 0.3;
+        let max = (height as f64) * 0.7;
         let mut rng = rand::thread_rng();
         let mut t = Vec::new();
         let mut p = Vec::new();
@@ -49,8 +55,8 @@ impl Noise {
             p.push(rng.gen_range(min, max));
         }
         Noise {
-            min: min,
-            max: max,
+            min: (height as f64) * 0.2,
+            max: (height as f64) * 0.8,
             t: t,
             p: p,
         }

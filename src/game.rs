@@ -16,20 +16,28 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         world.register::<Drawable>();
         world.register::<Position>();
         world.register::<Terrain>();
-        world
-            .create_now()
-            .with(Terrain::generate(1000, 500, 10))
-            .build();
     }
 
     fn setup_planner(&mut self,
                      planner: &mut specs::Planner<f32>,
                      encoder_queue: EncoderQueue<D>,
-                     _factory: &mut F,
+                     factory: &mut F,
                      rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>) {
-        let ds = DrawSystem::new(rtv, encoder_queue);
+        let mut ds = DrawSystem::new(rtv, encoder_queue);
         // Several system bounds are closely related:
         let pds = PreDrawSystem::new([10.0, 10.0]);
+
+        {
+            let terrain = Terrain::generate(1000, 500, 10);
+            let drawable = ds.create_terrain(factory, &terrain);
+
+            planner
+                .mut_world()
+                .create_now()
+                .with(terrain)
+                .with(drawable)
+                .build();
+        }
 
         planner.add_system(pds, "draw-prep", 15);
         planner.add_system(ds, "drawing", 10);

@@ -23,9 +23,10 @@ impl specs::Component for Position {
     type Storage = specs::VecStorage<Position>;
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug)]
 pub enum Drawable {
     Flat(draw::flat::Drawable),
+    Terrain(draw::terrain::Drawable),
 }
 
 impl specs::Component for Drawable {

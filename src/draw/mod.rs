@@ -3,6 +3,7 @@ use gfx;
 mod components;
 mod flat;
 mod system;
+mod terrain;
 
 pub type ColorFormat = gfx::format::Rgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
