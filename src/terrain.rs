@@ -54,6 +54,9 @@ impl Noise {
             t.push(last_t);
             p.push(rng.gen_range(min, max));
         }
+        last_t += rng.gen_range(0.0, dx * 2.0);
+        t.push(last_t);
+        p.push(rng.gen_range(min, max));
         Noise {
             min: (height as f64) * 0.2,
             max: (height as f64) * 0.8,
@@ -68,24 +71,20 @@ impl Noise {
         0.5 * (m1 + m2)
     }
 
-    fn find_t(&self, x: f64, min: usize, max: usize) -> usize {
-        if max - min <= 1 {
-            if self.t[max] <= x {
-                return max;
+    fn find_k(&self, x: f64) -> usize {
+        let mut i = 1;
+        while i < (self.t.len() - 3) {
+            if self.t[i + 1] > x {
+                break;
             }
-            return min;
+            i += 1;
         }
-        let mid = min + ((max - min) / 2);
-        if self.t[mid] <= x {
-            self.find_t(x, mid, max)
-        } else {
-            self.find_t(x, min, mid)
-        }
+        i
     }
 
     fn interp(&self, x: usize) -> f64 {
         let x = x as f64;
-        let k0 = self.find_t(x, 1, self.t.len() - 3);
+        let k0 = self.find_k(x);
         let k1 = k0 + 1;
         let t = (x - self.t[k0]) / (self.t[k1] - self.t[k0]);
         let t2 = t * t;
@@ -95,16 +94,30 @@ impl Noise {
         let p1 = self.p[k1] * (-2.0 * t3 + 3.0 * t2);
         let m1 = self.m(k1) * (t3 - t2);
         let y = p0 + m0 + p1 + m1;
-        trace!("X: {}, Y: {}, K0: {}, K1: {}, T0: {}, T1: {}",
-               x,
+        trace!("t: {}, Y: {}, K0: {}, K1: {}, P0: {}, P1: {}",
+               t,
                y,
                k0,
                k1,
-               self.t[k0],
-               self.t[k1]);
+               self.p[k0],
+               self.p[k1]);
         if y < self.min {
+            debug!("Cutoff necessary: t: {}, Y: {}, K0: {}, K1: {}, P0: {}, P1: {}",
+                   t,
+                   y,
+                   k0,
+                   k1,
+                   self.p[k0],
+                   self.p[k1]);
             self.min
         } else if y > self.max {
+            debug!("Cutoff necessary: t: {}, Y: {}, K0: {}, K1: {}, P0: {}, P1: {}",
+                   t,
+                   y,
+                   k0,
+                   k1,
+                   self.p[k0],
+                   self.p[k1]);
             self.max
         } else {
             y
