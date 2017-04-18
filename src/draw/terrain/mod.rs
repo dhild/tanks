@@ -1,4 +1,4 @@
-use super::ColorFormat;
+use draw::ColorFormat;
 use cgmath::{Matrix4, Vector3};
 use gfx;
 use terrain::Terrain;
@@ -7,6 +7,12 @@ use terrain::Terrain;
 pub struct Drawable {
     bounds: Bounds,
     base: Base,
+}
+
+impl Drawable {
+    pub fn update(&mut self, world_to_clip: &Matrix4<f32>) {
+        self.bounds.transform = (*world_to_clip).into();
+    }
 }
 
 gfx_defines!{
@@ -26,24 +32,13 @@ gfx_defines!{
         vbuf: gfx::VertexBuffer<Vertex> = (),
         base: gfx::ConstantBuffer<Base> = "Base",
         bounds: gfx::ConstantBuffer<Bounds> = "Bounds",
-        out: gfx::RenderTarget<ColorFormat> = "color",
+        out: gfx::RenderTarget<ColorFormat> = "out_color",
     }
 }
 
 impl Vertex {
     pub fn new(x: f32, y: f32) -> Vertex {
         Vertex { pos: [x, y] }
-    }
-}
-
-impl From<Matrix4<f32>> for Bounds {
-    fn from(mat: Matrix4<f32>) -> Bounds {
-        Bounds {
-            transform: [[mat.x.x, mat.y.x, mat.z.x, mat.w.x],
-                        [mat.x.y, mat.y.y, mat.z.y, mat.w.y],
-                        [mat.x.z, mat.y.z, mat.z.z, mat.w.z],
-                        [mat.x.w, mat.y.w, mat.z.w, mat.w.w]],
-        }
     }
 }
 
@@ -124,7 +119,7 @@ impl<D: gfx::Device> DrawSystem<D> {
         }
     }
 
-    pub fn draw(&mut self,
+    pub fn draw(&self,
                 drawable: &Drawable,
                 encoder: &mut gfx::Encoder<D::Resources, D::CommandBuffer>) {
         if let Some(ref bundle) = self.bundle {

@@ -1,21 +1,14 @@
-use cgmath::{Matrix4, Point2, Rad, Vector3};
+use cgmath::Point2;
 use draw;
 use specs;
 
 #[derive(Debug,Clone)]
 pub struct Position {
     pub position: Point2<f32>,
-    pub orient: Rad<f32>,
-    pub scale: f32,
 }
-
 impl Position {
-    pub fn to_translation(&self) -> Matrix4<f32> {
-        let translate = Vector3::new(self.position.x, self.position.y, 0.0);
-        let trans = Matrix4::from_translation(translate);
-        let scale = Matrix4::from_scale(self.scale);
-        let rot = Matrix4::from_angle_z(self.orient);
-        trans * scale * rot
+    pub fn new(x: f32, y: f32) -> Position {
+        Position { position: Point2::new(x, y) }
     }
 }
 
@@ -25,7 +18,7 @@ impl specs::Component for Position {
 
 #[derive(Debug)]
 pub enum Drawable {
-    Flat(draw::flat::Drawable),
+    Tank(draw::tank::Drawable),
     Terrain(draw::terrain::Drawable),
 }
 

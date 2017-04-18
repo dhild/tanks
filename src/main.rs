@@ -11,6 +11,7 @@ extern crate engine;
 
 mod draw;
 mod game;
+mod tank;
 mod terrain;
 
 use draw::{ColorFormat, DepthFormat};

@@ -2,8 +2,9 @@
 
 layout(location = 0) in vec2 position;
 
-uniform Bounds {
+uniform Locals {
   mat4 transform;
+  vec4 color;
 };
 
 void main() {

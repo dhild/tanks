@@ -1,16 +1,17 @@
 use super::ColorFormat;
-use cgmath::{Matrix4, Point2};
+use cgmath::{Matrix4, Vector3};
 use draw::components::{Drawable, Position};
-use draw::flat::DrawSystem as FlatDrawSystem;
+use draw::tank::DrawSystem as TankSystem;
 use draw::terrain::DrawSystem as TerrainSystem;
 use engine::EncoderQueue;
 use gfx;
 use specs;
+use tank::Tank;
 use terrain::Terrain;
 
 pub struct DrawSystem<D: gfx::Device> {
     render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
-    flat_system: FlatDrawSystem<D>,
+    tank_system: TankSystem<D::Resources>,
     terrain_system: TerrainSystem<D>,
     encoder_queue: EncoderQueue<D>,
 }
@@ -21,7 +22,7 @@ impl<D: gfx::Device> DrawSystem<D> {
                -> DrawSystem<D> {
         DrawSystem {
             render_target_view: rtv.clone(),
-            flat_system: FlatDrawSystem::new(rtv.clone()),
+            tank_system: TankSystem::new(rtv.clone()),
             terrain_system: TerrainSystem::new(rtv.clone()),
             encoder_queue: queue,
         }
@@ -32,6 +33,13 @@ impl<D: gfx::Device> DrawSystem<D> {
     {
         let d = self.terrain_system.create(factory, terrain);
         Drawable::Terrain(d)
+    }
+
+    pub fn create_tank<F>(&mut self, factory: &mut F, color: [f32; 3]) -> Drawable
+        where F: gfx::Factory<D::Resources>
+    {
+        let d = self.tank_system.create_tank(factory, color);
+        Drawable::Tank(d)
     }
 }
 
@@ -48,7 +56,7 @@ impl<D, C> specs::System<C> for DrawSystem<D>
 
         for d in (&drawables).join() {
             match *d {
-                Drawable::Flat(ref d) => self.flat_system.draw(d, &mut encoder),
+                Drawable::Tank(ref d) => self.tank_system.draw(d, &mut encoder),
                 Drawable::Terrain(ref d) => self.terrain_system.draw(d, &mut encoder),
             }
         }
@@ -61,27 +69,41 @@ impl<D, C> specs::System<C> for DrawSystem<D>
 }
 
 pub struct PreDrawSystem {
-    scale: Matrix4<f32>,
+    world_to_clip: Matrix4<f32>,
 }
 
 impl PreDrawSystem {
-    pub fn new<P: Into<Point2<f32>>>(extents: P) -> PreDrawSystem {
-        let extents = extents.into();
-        let scale = 1.0 / extents;
-        let scale = Matrix4::from_nonuniform_scale(scale.x, scale.y, 1.0);
-        PreDrawSystem { scale: scale }
+    pub fn new(width: usize, height: usize) -> PreDrawSystem {
+        let width = width as f32;
+        let height = height as f32;
+
+        let mat = Matrix4::from_translation(Vector3::new(-1.0, -1.0, 0.0)) *
+                  Matrix4::from_nonuniform_scale(2.0 / width, 2.0 / height, 1.0);
+
+        PreDrawSystem { world_to_clip: mat }
     }
 }
 
 impl<C> specs::System<C> for PreDrawSystem {
     fn run(&mut self, arg: specs::RunArg, _: C) {
         use specs::Join;
-        let (mut drawables, positions) =
-            arg.fetch(|w| (w.write::<Drawable>(), w.read::<Position>()));
-        for (d, p) in (&mut drawables, &positions).join() {
+        let (mut drawables, positions, tanks, entities) =
+            arg.fetch(|w| {
+                          (w.write::<Drawable>(),
+                           w.read::<Position>(),
+                           w.read::<Tank>(),
+                           w.entities())
+                      });
+        for (d, p, e) in (&mut drawables, &positions, &entities).join() {
             match *d {
-                Drawable::Flat(ref mut d) => d.update(self.scale * p.to_translation()),
-                Drawable::Terrain(_) => (),
+                Drawable::Tank(ref mut d) => {
+                    if let Some(tank) = tanks.get(e) {
+                        d.update(&self.world_to_clip, p, tank)
+                    } else {
+                        warn!("tank::Drawable without a Tank component");
+                    }
+                }
+                Drawable::Terrain(ref mut d) => d.update(&self.world_to_clip),
             }
         }
     }

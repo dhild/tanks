@@ -1,8 +1,8 @@
 use gfx;
 
 mod components;
-mod flat;
 mod system;
+mod tank;
 mod terrain;
 
 pub type ColorFormat = gfx::format::Rgba8;

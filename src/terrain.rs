@@ -46,7 +46,9 @@ impl Noise {
         let mut t = Vec::new();
         let mut p = Vec::new();
         let dx = width as f64 / count as f64;
-        let mut last_t = -dx;
+        t.push(-dx);
+        p.push(rng.gen_range(min, max));
+        let mut last_t = rng.gen_range(-dx, 0.0);
         t.push(last_t);
         p.push(rng.gen_range(min, max));
         while last_t <= (width as f64) {
