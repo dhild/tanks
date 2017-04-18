@@ -1,7 +1,8 @@
 use cgmath::{Matrix4, Vector3};
 use cgmath::prelude::*;
-use draw::{ColorFormat, Position};
+use draw::ColorFormat;
 use gfx;
+use physics::Position;
 use tank::Tank;
 
 #[derive(Debug,Clone)]
@@ -12,14 +13,14 @@ pub struct Drawable {
 
 impl Drawable {
     pub fn update(&mut self, world_to_clip: &Matrix4<f32>, pos: &Position, tank: &Tank) {
-        let translate =
-            Matrix4::from_translation(Vector3::new(pos.position.x, pos.position.y, 0.0));
-        let scale = Matrix4::from_nonuniform_scale(20.0, 20.0, 1.0);
-        let body_orient = Matrix4::from_angle_z(tank.tank_orient);
+        let model_to_world =
+            Matrix4::from_translation(Vector3::new(pos.position.x, pos.position.y, 0.0)) *
+            Matrix4::from_nonuniform_scale(20.0, 20.0, 1.0);
+        let body_orient = Matrix4::from_angle_z(pos.orient);
         let barrel_orient = Matrix4::from_angle_z(tank.barrel_orient);
 
-        self.body.transform = (world_to_clip * translate * scale * body_orient).into();
-        self.barrel.transform = (world_to_clip * translate * scale * barrel_orient).into();
+        self.body.transform = (world_to_clip * model_to_world * body_orient).into();
+        self.barrel.transform = (world_to_clip * model_to_world * barrel_orient).into();
     }
 }
 

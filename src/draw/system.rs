@@ -1,10 +1,11 @@
 use super::ColorFormat;
 use cgmath::{Matrix4, Vector3};
-use draw::components::{Drawable, Position};
+use draw::components::Drawable;
 use draw::tank::DrawSystem as TankSystem;
 use draw::terrain::DrawSystem as TerrainSystem;
 use engine::EncoderQueue;
 use gfx;
+use physics::Position;
 use specs;
 use tank::Tank;
 use terrain::Terrain;

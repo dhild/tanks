@@ -1,3 +1,6 @@
+
+use cgmath::Rad;
+use cgmath::prelude::*;
 use rand::{self, Rng};
 use specs;
 
@@ -27,6 +30,30 @@ impl Terrain {
         Terrain {
             max_height: height,
             heightmap: hmap,
+        }
+    }
+    pub fn get_height(&self, x: f32) -> f32 {
+        match x.floor() {
+            x if x < 0.0 => self.heightmap[0] as f32,
+            x if x >= (self.heightmap.len() - 1) as f32 => *self.heightmap.last().unwrap() as f32,
+            i => {
+                let y0 = self.heightmap[i as usize] as f32;
+                let y1 = self.heightmap[i as usize + 1] as f32;
+                let t = x - (i as f32);
+                y0 + t * (y1 - y0)
+            }
+        }
+    }
+    pub fn get_normal_dir(&self, x: f32) -> Rad<f32> {
+        if x < 1.0 {
+            self.get_normal_dir(1.0)
+        } else if x > (self.heightmap.len() - 2) as f32 {
+            self.get_normal_dir((self.heightmap.len() - 2) as f32)
+        } else {
+            let i = x.floor() as usize;
+            let y0 = self.heightmap[i] as f32;
+            let y1 = self.heightmap[i + 1] as f32;
+            Rad::atan(y1 - y0)
         }
     }
 }

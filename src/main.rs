@@ -11,6 +11,7 @@ extern crate engine;
 
 mod draw;
 mod game;
+mod physics;
 mod tank;
 mod terrain;
 
@@ -21,5 +22,5 @@ fn main() {
     log4rs::init_file("src/log4rs.yaml", Default::default()).unwrap();
     debug!("Starting up....");
 
-    engine::run::<ColorFormat, DepthFormat, TanksGame>("Tanks", TanksGame {});
+    engine::run::<ColorFormat, DepthFormat, TanksGame>("Tanks", TanksGame::new());
 }
