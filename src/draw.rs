@@ -12,7 +12,7 @@ pub type DepthFormat = gfx::format::DepthStencil;
 pub struct DrawSystem<D: gfx::Device> {
     render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
     tank_system: tank::DrawSystem<D::Resources>,
-    terrain_system: terrain::DrawSystem<D>,
+    terrain_system: terrain::DrawSystem<D::Resources>,
     projectile_system: projectile::DrawSystem<D::Resources>,
     encoder_queue: EncoderQueue<D>,
 }
@@ -20,26 +20,18 @@ pub struct DrawSystem<D: gfx::Device> {
 impl<D: gfx::Device> DrawSystem<D> {
     pub fn new<F>(factory: &mut F,
                   rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
-                  queue: EncoderQueue<D>)
+                  queue: EncoderQueue<D>,
+                  terrain: &terrain::Terrain)
                   -> DrawSystem<D>
         where F: gfx::Factory<D::Resources>
     {
         DrawSystem {
             render_target_view: rtv.clone(),
             tank_system: tank::DrawSystem::new(factory, rtv.clone()),
-            terrain_system: terrain::DrawSystem::new(rtv.clone()),
+            terrain_system: terrain::DrawSystem::new(factory, rtv.clone(), terrain),
             projectile_system: projectile::DrawSystem::new(factory, rtv.clone()),
             encoder_queue: queue,
         }
-    }
-
-    pub fn create_terrain<F>(&mut self,
-                             factory: &mut F,
-                             terrain: &terrain::Terrain)
-                             -> terrain::Drawable
-        where F: gfx::Factory<D::Resources>
-    {
-        self.terrain_system.create(factory, terrain)
     }
 }
 

@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Vector3};
+use cgmath::Matrix4;
 use draw::ColorFormat;
 use gfx;
 use physics::Dimensions;
@@ -12,6 +12,13 @@ pub struct Drawable {
 }
 
 impl Drawable {
+    pub fn new() -> Drawable {
+        Drawable {
+            bounds: Bounds { transform: [[0.0; 4]; 4] },
+            base: Base { base_y: -1.0 },
+        }
+    }
+
     pub fn update(&mut self, world_to_clip: &Matrix4<f32>) {
         self.bounds.transform = (*world_to_clip).into();
     }
@@ -52,53 +59,18 @@ const SHADER_VERT: &'static [u8] = include_bytes!("terrain.v.glsl");
 const SHADER_GEOM: &'static [u8] = include_bytes!("terrain.g.glsl");
 const SHADER_FRAG: &'static [u8] = include_bytes!("terrain.f.glsl");
 
-fn create_pso_bundle<F, R>(factory: &mut F,
-                           out: gfx::handle::RenderTargetView<R, ColorFormat>,
-                           rast: gfx::state::Rasterizer,
-                           vertices: &[Vertex])
-                           -> gfx::pso::bundle::Bundle<R, pipe::Data<R>>
-    where R: gfx::Resources,
-          F: gfx::Factory<R>
-{
-    use gfx::traits::FactoryExt;
-
-    let shaders = {
-        let vert = factory.create_shader_vertex(SHADER_VERT).unwrap();
-        let geom = factory.create_shader_geometry(SHADER_GEOM).unwrap();
-        let frag = factory.create_shader_pixel(SHADER_FRAG).unwrap();
-        gfx::ShaderSet::Geometry(vert, geom, frag)
-    };
-
-    let pso = factory
-        .create_pipeline_state(&shaders, gfx::Primitive::LineStrip, rast, pipe::new())
-        .unwrap();
-
-    let (vbuf, slice) = factory.create_vertex_buffer_with_slice(vertices, ());
-    let data = pipe::Data {
-        vbuf: vbuf,
-        base: factory.create_constant_buffer(1),
-        bounds: factory.create_constant_buffer(1),
-        out: out,
-    };
-    gfx::Bundle::new(slice, pso, data)
+pub struct DrawSystem<R: gfx::Resources> {
+    bundle: gfx::pso::bundle::Bundle<R, pipe::Data<R>>,
 }
 
-pub struct DrawSystem<D: gfx::Device> {
-    render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
-    bundle: Option<gfx::pso::bundle::Bundle<D::Resources, pipe::Data<D::Resources>>>,
-}
-
-impl<D: gfx::Device> DrawSystem<D> {
-    pub fn new(rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>) -> DrawSystem<D> {
-        DrawSystem {
-            render_target_view: rtv,
-            bundle: None,
-        }
-    }
-
-    pub fn create<F>(&mut self, factory: &mut F, terrain: &Terrain) -> Drawable
-        where F: gfx::Factory<D::Resources>
+impl<R: gfx::Resources> DrawSystem<R> {
+    pub fn new<F>(factory: &mut F,
+                  rtv: gfx::handle::RenderTargetView<R, ColorFormat>,
+                  terrain: &Terrain)
+                  -> DrawSystem<R>
+        where F: gfx::Factory<R>
     {
+        use gfx::traits::FactoryExt;
         let vertices: Vec<Vertex> = terrain
             .heightmap
             .iter()
@@ -106,33 +78,37 @@ impl<D: gfx::Device> DrawSystem<D> {
             .map(|(i, h)| Vertex::new(i as f32, *h as f32))
             .collect();
 
-        let rast = gfx::state::Rasterizer::new_fill();
-        let bundle = create_pso_bundle(factory,
-                                       self.render_target_view.clone(),
-                                       rast,
-                                       &vertices[..]);
-        self.bundle = Some(bundle);
+        let shaders = {
+            let vert = factory.create_shader_vertex(SHADER_VERT).unwrap();
+            let geom = factory.create_shader_geometry(SHADER_GEOM).unwrap();
+            let frag = factory.create_shader_pixel(SHADER_FRAG).unwrap();
+            gfx::ShaderSet::Geometry(vert, geom, frag)
+        };
 
-        let width = vertices.len() as f32;
-        let height = terrain.max_height as f32;
+        let pso = factory
+            .create_pipeline_state(&shaders,
+                                   gfx::Primitive::LineStrip,
+                                   gfx::state::Rasterizer::new_fill(),
+                                   pipe::new())
+            .unwrap();
 
-        let mat = Matrix4::from_translation(Vector3::new(-1.0, -1.0, 0.0)) *
-                  Matrix4::from_nonuniform_scale(2.0 / width, 2.0 / height, 1.0);
+        let (vbuf, slice) = factory.create_vertex_buffer_with_slice(&vertices[..], ());
+        let data = pipe::Data {
+            vbuf: vbuf,
+            base: factory.create_constant_buffer(1),
+            bounds: factory.create_constant_buffer(1),
+            out: rtv,
+        };
 
-        Drawable {
-            bounds: Bounds { transform: mat.into() },
-            base: Base { base_y: -1.0 },
-        }
+        DrawSystem { bundle: gfx::Bundle::new(slice, pso, data) }
     }
 
-    pub fn draw(&self,
-                drawable: &Drawable,
-                encoder: &mut gfx::Encoder<D::Resources, D::CommandBuffer>) {
-        if let Some(ref bundle) = self.bundle {
-            encoder.update_constant_buffer(&bundle.data.bounds, &drawable.bounds);
-            encoder.update_constant_buffer(&bundle.data.base, &drawable.base);
-            bundle.encode(encoder);
-        }
+    pub fn draw<C>(&self, drawable: &Drawable, encoder: &mut gfx::Encoder<R, C>)
+        where C: gfx::CommandBuffer<R>
+    {
+        encoder.update_constant_buffer(&self.bundle.data.bounds, &drawable.bounds);
+        encoder.update_constant_buffer(&self.bundle.data.base, &drawable.base);
+        self.bundle.encode(encoder);
     }
 }
 

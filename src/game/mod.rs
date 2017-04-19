@@ -33,23 +33,7 @@ impl TanksGame {
         }
     }
 
-    fn create_terrain<D, F>(&self,
-                            planner: &mut Planner,
-                            factory: &mut F,
-                            draw: &mut DrawSystem<D>)
-        where D: gfx::Device,
-              F: gfx::Factory<D::Resources>
-    {
-        let world = planner.mut_world();
-        let terrain = terrain::generate(self.width, self.height, 10);
-        let drawable = draw.create_terrain(factory, &terrain);
-
-        world.add_resource(terrain);
-        world.create().with(drawable).build();
-    }
-
-    fn create_tanks(&self, planner: &mut Planner) {
-        let world = planner.mut_world();
+    fn create_tanks(&self, world: &mut specs::World) {
         let dx = self.width as f32 / ((COLORS.len() + 1) as f32);
         let mut rng = rand::thread_rng();
         for (i, color) in COLORS.iter().enumerate() {
@@ -89,6 +73,9 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
                                height: self.height,
                            });
         world.add_resource(ActivePlayer::new());
+        world.add_resource(terrain::generate(self.width, self.height, 10));
+        world.create().with(terrain::Drawable::new()).build();
+        self.create_tanks(world);
     }
 
     fn setup_planner(&mut self,
@@ -96,11 +83,10 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
                      encoder_queue: EncoderQueue<D>,
                      factory: &mut F,
                      rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>) {
-        let mut draw = DrawSystem::new(factory, rtv, encoder_queue);
-
-        self.create_terrain(planner, factory, &mut draw);
-        self.create_tanks(planner);
-
+        let terrain = planner
+            .mut_world()
+            .read_resource_now::<terrain::Terrain>();
+        let draw = DrawSystem::new(factory, rtv, encoder_queue, &terrain);
         planner.add_system(draw, "drawing", 10);
         planner.add_system(terrain::PreDrawSystem::new(), "draw-prep-terrain", 15);
         planner.add_system(tank::PreDrawSystem::new(), "draw-prep-tank", 15);
