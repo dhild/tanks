@@ -10,6 +10,8 @@ use terrain;
 
 mod state;
 
+pub use self::state::ActivePlayer;
+
 #[derive(Debug)]
 pub struct TanksGame {
     width: usize,
@@ -80,12 +82,13 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         world.register::<tank::Tank>();
         world.register::<tank::Drawable>();
         world.register::<terrain::Drawable>();
-        world.register::<projectile::Projectile>();
+        world.register::<projectile::Drawable>();
 
         world.add_resource(Dimensions {
                                width: self.width,
                                height: self.height,
                            });
+        world.add_resource(ActivePlayer::new());
     }
 
     fn setup_planner(&mut self,
@@ -94,19 +97,17 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
                      factory: &mut F,
                      rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>) {
         let mut draw = DrawSystem::new(factory, rtv, encoder_queue);
-        let pds = PreDrawSystem::new();
-        let inertia = InertiaSystem::new();
-        let settle = SettleSystem::new();
-        let state = state::GameStateSystem::new();
 
         self.create_terrain(planner, factory, &mut draw);
         self.create_tanks(planner);
 
-        planner.add_system(pds, "draw-prep", 15);
         planner.add_system(draw, "drawing", 10);
-        planner.add_system(inertia, "inertia", 20);
-        planner.add_system(settle, "settle", 25);
-        planner.add_system(state, "game-state", 50);
+        planner.add_system(terrain::PreDrawSystem::new(), "draw-prep-terrain", 15);
+        planner.add_system(tank::PreDrawSystem::new(), "draw-prep-tank", 15);
+        planner.add_system(projectile::PreDrawSystem::new(), "draw-prep-projectile", 15);
+        planner.add_system(InertiaSystem::new(), "inertia", 20);
+        planner.add_system(SettleSystem::new(), "settle", 25);
+        planner.add_system(state::GameStateSystem::new(), "game-state", 50);
     }
     fn check_status(&mut self, _world: &mut specs::World) -> RunStatus {
         RunStatus::Running

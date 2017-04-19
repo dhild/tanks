@@ -4,7 +4,7 @@ use rand::{self, Rng};
 
 mod draw;
 
-pub use self::draw::{Drawable, DrawSystem};
+pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 
 pub fn generate(width: usize, height: usize, points: usize) -> Terrain {
     assert!(width > 3 && height > 3 && width < u16::max_value() as usize &&

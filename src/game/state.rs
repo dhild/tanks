@@ -3,6 +3,20 @@ use specs::{self, Join};
 use tank::Tank;
 
 #[derive(Debug)]
+pub struct ActivePlayer {
+    player: Option<u8>,
+}
+
+impl ActivePlayer {
+    pub fn new() -> ActivePlayer {
+        ActivePlayer { player: None }
+    }
+    pub fn player_number(&self) -> Option<u8> {
+        self.player
+    }
+}
+
+#[derive(Debug)]
 enum GameState {
     TankFiring,
     ProjectilesTravelling,
@@ -76,7 +90,8 @@ impl GameStateSystem {
     }
 
     fn calculate_next(&mut self, arg: specs::RunArg) {
-        let tanks = arg.fetch(|w| w.read::<Tank>());
+        let (tanks, mut active) =
+            arg.fetch(|w| (w.read::<Tank>(), w.write_resource::<ActivePlayer>()));
         let tank_count = (&tanks.check()).join().count();
         if tank_count <= 1 {
             // TODO: Handle case where all tanks are gone without a winner (tank_count == 0)
@@ -84,19 +99,22 @@ impl GameStateSystem {
             debug!("A winner has been declared!");
         } else {
             let next_tank = self.turn.next((&tanks).join());
-            if let Some(tank) = next_tank {
-                // TODO: Let the firing system know about the active tank...
+            active.player = next_tank;
+            debug!("Next tank to fire is {:?}", next_tank);
+            if next_tank.is_some() {
                 self.state = GameState::TankFiring;
-                debug!("Next tank to fire is {}", tank);
+            } else {
+                warn!("Unable to determine next tank to fire");
             }
         }
     }
 
     fn firing(&mut self, arg: specs::RunArg) {
-        // TODO: Process input
         // Once a projectile appears, move to next state
-        let projectiles = arg.fetch(|w| w.read::<Projectile>());
+        let (projectiles, mut firing) =
+            arg.fetch(|w| (w.read::<Projectile>(), w.write_resource::<ActivePlayer>()));
         if !(&projectiles.check()).join().next().is_none() {
+            firing.player = None;
             self.state = GameState::ProjectilesTravelling;
             debug!("Projectiles are now travelling!");
         }

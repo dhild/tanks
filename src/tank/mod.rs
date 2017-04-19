@@ -5,12 +5,13 @@ use specs;
 
 mod draw;
 
-pub use self::draw::{Drawable, DrawSystem};
+pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 
 #[derive(Debug)]
 pub struct Tank {
     pub player_number: u8,
     pub barrel_orient: Rad<f32>,
+    pub power_level: f32,
 }
 
 impl Tank {
@@ -19,13 +20,8 @@ impl Tank {
         Tank {
             player_number: player_number,
             barrel_orient: Rad::from(Deg(rng.gen_range(-45.0, 45.0))),
+            power_level: 0.5,
         }
-    }
-
-    pub fn body_to_world(&self, pos: &Position) -> Matrix4<f32> {
-        Matrix4::from_translation(Vector3::new(pos.position.x, pos.position.y, 0.0)) *
-        Matrix4::from_nonuniform_scale(pos.scale, pos.scale, 1.0) *
-        Matrix4::from_angle_z(pos.orient)
     }
 
     pub fn barrel_to_world(&self, pos: &Position) -> Matrix4<f32> {

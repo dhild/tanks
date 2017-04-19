@@ -1,7 +1,7 @@
-
 use cgmath::{Matrix4, Vector3};
 use draw::ColorFormat;
 use gfx;
+use physics::Dimensions;
 use specs;
 use terrain::Terrain;
 
@@ -132,6 +132,29 @@ impl<D: gfx::Device> DrawSystem<D> {
             encoder.update_constant_buffer(&bundle.data.bounds, &drawable.bounds);
             encoder.update_constant_buffer(&bundle.data.base, &drawable.base);
             bundle.encode(encoder);
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct PreDrawSystem;
+
+impl PreDrawSystem {
+    pub fn new() -> PreDrawSystem {
+        PreDrawSystem {}
+    }
+}
+
+impl<C> specs::System<C> for PreDrawSystem {
+    fn run(&mut self, arg: specs::RunArg, _: C) {
+        use specs::Join;
+        let (mut terrain, dim) =
+            arg.fetch(|w| (w.write::<Drawable>(), w.read_resource::<Dimensions>()));
+
+        let world_to_clip = dim.world_to_clip();
+
+        for t in (&mut terrain).join() {
+            t.update(&world_to_clip);
         }
     }
 }

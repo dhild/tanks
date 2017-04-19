@@ -1,4 +1,4 @@
-use cgmath::{Rad, Point2, Vector2};
+use cgmath::{Matrix4, Point2, Rad, Vector2, Vector3};
 use cgmath::prelude::*;
 use specs;
 
@@ -6,6 +6,13 @@ use specs;
 pub struct Dimensions {
     pub width: usize,
     pub height: usize,
+}
+
+impl Dimensions {
+    pub fn world_to_clip(&self) -> Matrix4<f32> {
+        Matrix4::from_translation(Vector3::new(-1.0, -1.0, 0.0)) *
+        Matrix4::from_nonuniform_scale(2.0 / (self.width as f32), 2.0 / (self.height as f32), 1.0)
+    }
 }
 
 #[derive(Debug,Clone)]
@@ -22,6 +29,12 @@ impl Position {
             orient: angle,
             scale: scale,
         }
+    }
+
+    pub fn model_to_world(&self) -> Matrix4<f32> {
+        Matrix4::from_translation(Vector3::new(self.position.x, self.position.y, 0.0)) *
+        Matrix4::from_nonuniform_scale(self.scale, self.scale, 1.0) *
+        Matrix4::from_angle_z(self.orient)
     }
 }
 
