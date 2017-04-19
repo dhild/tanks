@@ -2,10 +2,13 @@ use draw::*;
 use engine::{EncoderQueue, GameFunctions, RunStatus};
 use gfx;
 use physics::*;
+use projectile;
 use rand::{self, Rng};
 use specs;
 use tank;
 use terrain;
+
+mod state;
 
 #[derive(Debug)]
 pub struct TanksGame {
@@ -57,7 +60,7 @@ impl TanksGame {
 
             world
                 .create()
-                .with(tank::Tank::new())
+                .with(tank::Tank::new(i as u8 + 1))
                 .with(drawable)
                 .with(Position::new(x, terrain_height, normal_dir, 20.0))
                 .with(Velocity::new())
@@ -77,6 +80,7 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         world.register::<tank::Tank>();
         world.register::<tank::Drawable>();
         world.register::<terrain::Drawable>();
+        world.register::<projectile::Projectile>();
 
         world.add_resource(Dimensions {
                                width: self.width,
@@ -93,6 +97,7 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         let pds = PreDrawSystem::new();
         let inertia = InertiaSystem::new();
         let settle = SettleSystem::new();
+        let state = state::GameStateSystem::new();
 
         self.create_terrain(planner, factory, &mut draw);
         self.create_tanks(planner);
@@ -101,6 +106,7 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         planner.add_system(draw, "drawing", 10);
         planner.add_system(inertia, "inertia", 20);
         planner.add_system(settle, "settle", 25);
+        planner.add_system(state, "game-state", 50);
     }
     fn check_status(&mut self, _world: &mut specs::World) -> RunStatus {
         RunStatus::Running

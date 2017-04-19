@@ -9,13 +9,17 @@ pub use self::draw::{Drawable, DrawSystem};
 
 #[derive(Debug)]
 pub struct Tank {
+    pub player_number: u8,
     pub barrel_orient: Rad<f32>,
 }
 
 impl Tank {
-    pub fn new() -> Tank {
+    pub fn new(player_number: u8) -> Tank {
         let mut rng = rand::thread_rng();
-        Tank { barrel_orient: Rad::from(Deg(rng.gen_range(-45.0, 45.0))) }
+        Tank {
+            player_number: player_number,
+            barrel_orient: Rad::from(Deg(rng.gen_range(-45.0, 45.0))),
+        }
     }
 
     pub fn body_to_world(&self, pos: &Position) -> Matrix4<f32> {

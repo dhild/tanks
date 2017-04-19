@@ -12,6 +12,7 @@ extern crate engine;
 mod draw;
 mod game;
 mod physics;
+mod projectile;
 mod tank;
 mod terrain;
 
