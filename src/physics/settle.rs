@@ -1,5 +1,5 @@
 use super::{Delta, Position, Velocity};
-use cgmath::{Deg, Rad, Point2, Vector2};
+use cgmath::{Deg, Rad, Vector2};
 use cgmath::prelude::*;
 use specs;
 use terrain::Terrain;
@@ -7,21 +7,11 @@ use terrain::Terrain;
 #[derive(Debug)]
 pub struct SettleSystem {
     gravity: f32,
-    terrain: specs::Entity,
 }
 
 impl SettleSystem {
-    pub fn new(terrain: specs::Entity) -> SettleSystem {
-        SettleSystem {
-            gravity: -9.8,
-            terrain: terrain,
-        }
-    }
-
-    pub fn target(p: &Position, v: &mut Velocity, terrain: &Terrain) -> (Point2<f32>, Rad<f32>) {
-        let terrain_height = terrain.get_height(p.position.x);
-        let normal_dir = terrain.get_normal_dir(p.position.x);
-        (Point2::new(terrain_height, p.position.y), normal_dir)
+    pub fn new() -> SettleSystem {
+        SettleSystem { gravity: -9.8 }
     }
 
     pub fn settle(&self, p: &Position, v: &mut Velocity, terrain: &Terrain, time: Delta) {
@@ -56,10 +46,13 @@ impl specs::System<Delta> for SettleSystem {
     fn run(&mut self, arg: specs::RunArg, time: Delta) {
         use specs::Join;
         let (positions, mut velocities, terrain) =
-            arg.fetch(|w| (w.read::<Position>(), w.write::<Velocity>(), w.read::<Terrain>()));
-        let terrain = terrain.get(self.terrain).unwrap();
+            arg.fetch(|w| {
+                          (w.read::<Position>(),
+                           w.write::<Velocity>(),
+                           w.read_resource::<Terrain>())
+                      });
         for (p, v) in (&positions, &mut velocities).join() {
-            self.settle(p, v, terrain, time);
+            self.settle(p, v, &terrain, time);
         }
     }
 }

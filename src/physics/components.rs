@@ -3,15 +3,24 @@ use cgmath::prelude::*;
 use specs;
 
 #[derive(Debug,Clone)]
+pub struct Dimensions {
+    pub width: usize,
+    pub height: usize,
+}
+
+#[derive(Debug,Clone)]
 pub struct Position {
     pub position: Point2<f32>,
     pub orient: Rad<f32>,
+    pub scale: f32,
 }
+
 impl Position {
-    pub fn new(x: f32, y: f32) -> Position {
+    pub fn new(x: f32, y: f32, angle: Rad<f32>, scale: f32) -> Position {
         Position {
             position: Point2::new(x, y),
-            orient: Rad::zero(),
+            orient: angle,
+            scale: scale,
         }
     }
 }

@@ -1,46 +1,41 @@
 use super::ColorFormat;
 use cgmath::{Matrix4, Vector3};
-use draw::components::Drawable;
-use draw::tank::DrawSystem as TankSystem;
-use draw::terrain::DrawSystem as TerrainSystem;
 use engine::EncoderQueue;
 use gfx;
-use physics::Position;
+use physics::{Dimensions, Position};
 use specs;
-use tank::Tank;
-use terrain::Terrain;
+use tank;
+use terrain;
 
 pub struct DrawSystem<D: gfx::Device> {
     render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
-    tank_system: TankSystem<D::Resources>,
-    terrain_system: TerrainSystem<D>,
+    tank_system: tank::DrawSystem<D::Resources>,
+    terrain_system: terrain::DrawSystem<D>,
     encoder_queue: EncoderQueue<D>,
 }
 
 impl<D: gfx::Device> DrawSystem<D> {
-    pub fn new(rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
-               queue: EncoderQueue<D>)
-               -> DrawSystem<D> {
+    pub fn new<F>(factory: &mut F,
+                  rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
+                  queue: EncoderQueue<D>)
+                  -> DrawSystem<D>
+        where F: gfx::Factory<D::Resources>
+    {
         DrawSystem {
             render_target_view: rtv.clone(),
-            tank_system: TankSystem::new(rtv.clone()),
-            terrain_system: TerrainSystem::new(rtv.clone()),
+            tank_system: tank::DrawSystem::new(factory, rtv.clone()),
+            terrain_system: terrain::DrawSystem::new(rtv.clone()),
             encoder_queue: queue,
         }
     }
 
-    pub fn create_terrain<F>(&mut self, factory: &mut F, terrain: &Terrain) -> Drawable
+    pub fn create_terrain<F>(&mut self,
+                             factory: &mut F,
+                             terrain: &terrain::Terrain)
+                             -> terrain::Drawable
         where F: gfx::Factory<D::Resources>
     {
-        let d = self.terrain_system.create(factory, terrain);
-        Drawable::Terrain(d)
-    }
-
-    pub fn create_tank<F>(&mut self, factory: &mut F, color: [f32; 3]) -> Drawable
-        where F: gfx::Factory<D::Resources>
-    {
-        let d = self.tank_system.create_tank(factory, color);
-        Drawable::Tank(d)
+        self.terrain_system.create(factory, terrain)
     }
 }
 
@@ -51,17 +46,17 @@ impl<D, C> specs::System<C> for DrawSystem<D>
     fn run(&mut self, arg: specs::RunArg, _: C) {
         use specs::Join;
         let mut encoder = self.encoder_queue.receiver.recv().unwrap();
-        let drawables = arg.fetch(|w| w.read::<Drawable>());
+        let (tanks, terrain) =
+            arg.fetch(|w| (w.read::<tank::Drawable>(), w.read::<terrain::Drawable>()));
 
         encoder.clear(&self.render_target_view, [0.0, 0.0, 0.0, 1.0]);
 
-        for d in (&drawables).join() {
-            match *d {
-                Drawable::Tank(ref d) => self.tank_system.draw(d, &mut encoder),
-                Drawable::Terrain(ref d) => self.terrain_system.draw(d, &mut encoder),
-            }
+        for t in (&terrain).join() {
+            self.terrain_system.draw(t, &mut encoder);
         }
-        // TODO: Render based on the type of drawable...
+        for t in (&tanks).join() {
+            self.tank_system.draw(t, &mut encoder);
+        }
 
         if let Err(e) = self.encoder_queue.sender.send(encoder) {
             warn!("Disconnected, cannot return encoder to mpsc: {}", e);
@@ -69,43 +64,37 @@ impl<D, C> specs::System<C> for DrawSystem<D>
     }
 }
 
-pub struct PreDrawSystem {
-    world_to_clip: Matrix4<f32>,
-}
+#[derive(Debug)]
+pub struct PreDrawSystem;
 
 impl PreDrawSystem {
-    pub fn new(width: usize, height: usize) -> PreDrawSystem {
-        let width = width as f32;
-        let height = height as f32;
-
-        let mat = Matrix4::from_translation(Vector3::new(-1.0, -1.0, 0.0)) *
-                  Matrix4::from_nonuniform_scale(2.0 / width, 2.0 / height, 1.0);
-
-        PreDrawSystem { world_to_clip: mat }
+    pub fn new() -> PreDrawSystem {
+        PreDrawSystem {}
     }
 }
 
 impl<C> specs::System<C> for PreDrawSystem {
     fn run(&mut self, arg: specs::RunArg, _: C) {
         use specs::Join;
-        let (mut drawables, positions, tanks, entities) =
+        let (positions, mut terrains, mut dtanks, tanks, dim) =
             arg.fetch(|w| {
-                          (w.write::<Drawable>(),
-                           w.read::<Position>(),
-                           w.read::<Tank>(),
-                           w.entities())
+                          (w.read::<Position>(),
+                           w.write::<terrain::Drawable>(),
+                           w.write::<tank::Drawable>(),
+                           w.read::<tank::Tank>(),
+                           w.read_resource::<Dimensions>())
                       });
-        for (d, p, e) in (&mut drawables, &positions, &entities).join() {
-            match *d {
-                Drawable::Tank(ref mut d) => {
-                    if let Some(tank) = tanks.get(e) {
-                        d.update(&self.world_to_clip, p, tank)
-                    } else {
-                        warn!("tank::Drawable without a Tank component");
-                    }
-                }
-                Drawable::Terrain(ref mut d) => d.update(&self.world_to_clip),
-            }
+
+        let world_to_clip = Matrix4::from_translation(Vector3::new(-1.0, -1.0, 0.0)) *
+                            Matrix4::from_nonuniform_scale(2.0 / (dim.width as f32),
+                                                           2.0 / (dim.height as f32),
+                                                           1.0);
+
+        for t in (&mut terrains).join() {
+            t.update(&world_to_clip);
+        }
+        for (p, d, t) in (&positions, &mut dtanks, &tanks).join() {
+            d.update(&world_to_clip, p, t);
         }
     }
 }

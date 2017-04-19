@@ -4,14 +4,13 @@ use gfx;
 use physics::*;
 use rand::{self, Rng};
 use specs;
-use tank::Tank;
-use terrain::Terrain;
+use tank;
+use terrain;
 
 #[derive(Debug)]
 pub struct TanksGame {
     width: usize,
     height: usize,
-    terrain_points: usize,
 }
 
 const COLORS: [[f32; 3]; 4] = [
@@ -26,7 +25,6 @@ impl TanksGame {
         TanksGame {
             width: 1000,
             height: 500,
-            terrain_points: 10,
         }
     }
 
@@ -34,36 +32,34 @@ impl TanksGame {
                             planner: &mut Planner,
                             factory: &mut F,
                             draw: &mut DrawSystem<D>)
-                            -> specs::Entity
         where D: gfx::Device,
               F: gfx::Factory<D::Resources>
     {
-        let terrain = Terrain::generate(self.width, self.height, self.terrain_points);
+        let world = planner.mut_world();
+        let terrain = terrain::generate(self.width, self.height, 10);
         let drawable = draw.create_terrain(factory, &terrain);
 
-        planner
-            .mut_world()
-            .create_now()
-            .with(terrain)
-            .with(drawable)
-            .build()
+        world.add_resource(terrain);
+        world.create().with(drawable).build();
     }
-    fn create_tanks<D, F>(&self, planner: &mut Planner, factory: &mut F, draw: &mut DrawSystem<D>)
-        where D: gfx::Device,
-              F: gfx::Factory<D::Resources>
-    {
+
+    fn create_tanks(&self, planner: &mut Planner) {
+        let world = planner.mut_world();
         let dx = self.width as f32 / ((COLORS.len() + 1) as f32);
         let mut rng = rand::thread_rng();
         for (i, color) in COLORS.iter().enumerate() {
             let x = (i as f32 * dx) + rng.gen_range(dx / 2.0, 3.0 * dx / 2.0);
-            let drawable = draw.create_tank(factory, *color);
+            let drawable = tank::Drawable::new(*color);
 
-            planner
-                .mut_world()
-                .create_now()
-                .with(Tank::new())
+            let terrain = world.read_resource_now::<terrain::Terrain>();
+            let terrain_height = terrain.get_height(x);
+            let normal_dir = terrain.get_normal_dir(x);
+
+            world
+                .create()
+                .with(tank::Tank::new())
                 .with(drawable)
-                .with(Position::new(x, self.height as f32 * 0.9))
+                .with(Position::new(x, terrain_height, normal_dir, 20.0))
                 .with(Velocity::new())
                 .build();
         }
@@ -76,11 +72,16 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
           F: gfx::Factory<D::Resources>
 {
     fn setup_world(&mut self, world: &mut specs::World) {
-        world.register::<Drawable>();
         world.register::<Position>();
         world.register::<Velocity>();
-        world.register::<Terrain>();
-        world.register::<Tank>();
+        world.register::<tank::Tank>();
+        world.register::<tank::Drawable>();
+        world.register::<terrain::Drawable>();
+
+        world.add_resource(Dimensions {
+                               width: self.width,
+                               height: self.height,
+                           });
     }
 
     fn setup_planner(&mut self,
@@ -88,14 +89,13 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
                      encoder_queue: EncoderQueue<D>,
                      factory: &mut F,
                      rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>) {
-        let mut draw = DrawSystem::new(rtv, encoder_queue);
-        let pds = PreDrawSystem::new(self.width, self.height);
+        let mut draw = DrawSystem::new(factory, rtv, encoder_queue);
+        let pds = PreDrawSystem::new();
         let inertia = InertiaSystem::new();
+        let settle = SettleSystem::new();
 
-        let terrain_entity = self.create_terrain(planner, factory, &mut draw);
-        self.create_tanks(planner, factory, &mut draw);
-
-        let settle = SettleSystem::new(terrain_entity);
+        self.create_terrain(planner, factory, &mut draw);
+        self.create_tanks(planner);
 
         planner.add_system(pds, "draw-prep", 15);
         planner.add_system(draw, "drawing", 10);

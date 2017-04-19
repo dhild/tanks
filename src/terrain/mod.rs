@@ -1,8 +1,28 @@
-
 use cgmath::Rad;
 use cgmath::prelude::*;
 use rand::{self, Rng};
-use specs;
+
+mod draw;
+
+pub use self::draw::{Drawable, DrawSystem};
+
+pub fn generate(width: usize, height: usize, points: usize) -> Terrain {
+    assert!(width > 3 && height > 3 && width < u16::max_value() as usize &&
+            height < u16::max_value() as usize);
+
+    let noise = Noise::new(width, height, points);
+
+    let mut hmap = Vec::with_capacity(width);
+
+    for x in 0..width {
+        hmap.push(noise.interp(x) as u16);
+    }
+
+    Terrain {
+        max_height: height,
+        heightmap: hmap,
+    }
+}
 
 #[derive(Debug)]
 pub struct Terrain {
@@ -10,28 +30,7 @@ pub struct Terrain {
     pub heightmap: Vec<u16>,
 }
 
-impl specs::Component for Terrain {
-    type Storage = specs::HashMapStorage<Terrain>;
-}
-
 impl Terrain {
-    pub fn generate(width: usize, height: usize, points: usize) -> Terrain {
-        assert!(width > 3 && height > 3 && width < u16::max_value() as usize &&
-                height < u16::max_value() as usize);
-
-        let noise = Noise::new(width, height, points);
-
-        let mut hmap = Vec::with_capacity(width);
-
-        for x in 0..width {
-            hmap.push(noise.interp(x) as u16);
-        }
-
-        Terrain {
-            max_height: height,
-            heightmap: hmap,
-        }
-    }
     pub fn get_height(&self, x: f32) -> f32 {
         match x.floor() {
             x if x < 0.0 => self.heightmap[0] as f32,

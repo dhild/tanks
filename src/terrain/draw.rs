@@ -1,6 +1,8 @@
-use draw::ColorFormat;
+
 use cgmath::{Matrix4, Vector3};
+use draw::ColorFormat;
 use gfx;
+use specs;
 use terrain::Terrain;
 
 #[derive(Debug)]
@@ -13,6 +15,10 @@ impl Drawable {
     pub fn update(&mut self, world_to_clip: &Matrix4<f32>) {
         self.bounds.transform = (*world_to_clip).into();
     }
+}
+
+impl specs::Component for Drawable {
+    type Storage = specs::HashMapStorage<Drawable>;
 }
 
 gfx_defines!{
