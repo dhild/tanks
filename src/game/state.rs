@@ -93,20 +93,33 @@ impl GameStateSystem {
             let players = w.read_resource_now::<Players>();
             let players = players.get_remaining(w);
             if players.len() <= 1 {
-                // TODO: Handle case where all tanks are gone without a winner
                 self.state = GameState::WinnerDeclared;
                 if players.len() == 1 {
-                    debug!("Player {} is the winner!", players.first().unwrap().player_number());
+                    info!("Player {} is the winner!",
+                          players.first().unwrap().player_number());
+                } else {
+                    info!("All players were destroyed!");
                 }
-            }
-            let mut active = w.write_resource_now::<ActivePlayer>();
-            let next_tank = self.turn.next(players);
-            active.player = next_tank;
-            debug!("Next tank to fire is {:?}", next_tank);
-            if next_tank.is_some() {
-                self.state = GameState::TankFiring;
             } else {
-                warn!("Unable to determine next tank to fire");
+                {
+                    use tank::Tank;
+                    use specs::Gate;
+                    let tanks = w.read::<Tank>().pass();
+                    for &p in &players {
+                        info!("Player {} is at health {}",
+                              p.player_number(),
+                              tanks.get(p.id()).unwrap().health);
+                    }
+                }
+                let mut active = w.write_resource_now::<ActivePlayer>();
+                let next_tank = self.turn.next(players);
+                active.player = next_tank;
+                info!("Next tank to fire is {:?}", next_tank);
+                if next_tank.is_some() {
+                    self.state = GameState::TankFiring;
+                } else {
+                    warn!("Unable to determine next tank to fire");
+                }
             }
         });
     }

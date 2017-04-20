@@ -13,6 +13,7 @@ pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 pub struct Tank {
     pub barrel_orient: Rad<f32>,
     pub power_level: f32,
+    pub health: f32
 }
 
 impl Tank {
@@ -21,6 +22,7 @@ impl Tank {
         Tank {
             barrel_orient: Rad::from(Deg(rng.gen_range(-45.0, 45.0))),
             power_level: 0.5,
+            health: 100.0,
         }
     }
 
