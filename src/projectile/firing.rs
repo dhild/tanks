@@ -31,15 +31,21 @@ pub struct FiringSystem {
 
 impl<C> specs::System<C> for FiringSystem {
     fn run(&mut self, arg: specs::RunArg, _: C) {
-        let (tanks, mut projectiles, mut drawables, mut positions, mut velocities, firing) =
-            arg.fetch(|w| {
-                          (w.read::<Tank>(),
-                           w.write::<Projectile>(),
-                           w.write::<Drawable>(),
-                           w.write::<Position>(),
-                           w.write::<Velocity>(),
-                           w.read_resource::<ActivePlayer>())
-                      });
+        let (tanks,
+             mut projectiles,
+             mut drawables,
+             mut positions,
+             mut velocities,
+             mut mass,
+             firing) = arg.fetch(|w| {
+            (w.read::<Tank>(),
+             w.write::<Projectile>(),
+             w.write::<Drawable>(),
+             w.write::<Position>(),
+             w.write::<Velocity>(),
+             w.write::<Mass>(),
+             w.read_resource::<ActivePlayer>())
+        });
         while let Ok(()) = self.queue.try_recv() {
             let player = match firing.player() {
                 None => continue,
@@ -55,17 +61,20 @@ impl<C> specs::System<C> for FiringSystem {
                     None => continue,
                     Some(p) => p,
                 };
-                let power = tank.power_level;
-                let cos = tank.barrel_orient.cos();
-                let sin = tank.barrel_orient.sin();
-                let velocity = Velocity::from([power * cos, power * sin]);
+                let power = 500.0 * tank.power_level;
+                let vx = power * -tank.barrel_orient.sin();
+                let vy = power * tank.barrel_orient.cos();
+                let velocity = Velocity::from([vx, vy]);
                 let position = Position::new(tank_pos.position.x, tank_pos.position.y,
-                    tank.barrel_orient, 1.0);
+                    tank.barrel_orient, 7.0);
+
+                debug!("Angle: {:?}, Initial velocity: {:?}", tank.barrel_orient, velocity);
 
                 let eid = arg.create_pure();
                 projectiles.insert(eid, Projectile::new());
                 drawables.insert(eid, Drawable::new());
                 velocities.insert(eid, velocity);
+                mass.insert(eid, Mass { mass: 75.0 });
                 (eid, position)
             }; // Borrow released here, now we can insert:
             positions.insert(eid, position);

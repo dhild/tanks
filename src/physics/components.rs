@@ -69,3 +69,12 @@ impl<I: Into<Vector2<f32>>> From<I> for Velocity {
 impl specs::Component for Velocity {
     type Storage = specs::VecStorage<Velocity>;
 }
+
+#[derive(Debug)]
+pub struct Mass {
+    pub mass: f32
+}
+
+impl specs::Component for Mass {
+    type Storage = specs::VecStorage<Mass>;
+}

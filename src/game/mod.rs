@@ -44,6 +44,7 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
     fn setup_world(&mut self, world: &mut specs::World) {
         world.register::<Position>();
         world.register::<Velocity>();
+        world.register::<Mass>();
         world.register::<tank::Tank>();
         world.register::<tank::Drawable>();
         world.register::<terrain::Drawable>();
@@ -79,7 +80,8 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         planner.add_system(tank::PreDrawSystem::new(), "draw-prep-tank", 15);
         planner.add_system(projectile::PreDrawSystem::new(), "draw-prep-projectile", 15);
         planner.add_system(InertiaSystem::new(), "inertia", 20);
-        planner.add_system(SettleSystem::new(), "settle", 25);
+        planner.add_system(GravitySystem::new(), "gravity", 25);
+        planner.add_system(projectile::CollisionSystem::new(), "collision-projectile", 35);
         planner.add_system(firing, "firing", 40);
         planner.add_system(state::GameStateSystem::new(), "game-state", 50);
     }
