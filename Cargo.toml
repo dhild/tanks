@@ -14,3 +14,10 @@ rand = "0.3"
 
 [features]
 default = []
+
+[package.metadata.android]
+android_version = 19
+fullscreen = true
+package_name = "net.dryanhild.rust.tanks"
+project_name = "rust.tanks"
+package_label = "Rusty Tanks"
