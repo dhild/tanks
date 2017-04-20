@@ -1,3 +1,4 @@
+use explosion::Explosion;
 use game::{Player, Players};
 use projectile::Projectile;
 use specs::{self, Join};
@@ -20,6 +21,7 @@ impl ActivePlayer {
 enum GameState {
     TankFiring,
     ProjectilesTravelling,
+    ProjectilesImpacting,
     CalculateNextPlayer,
     WinnerDeclared,
 }
@@ -71,8 +73,9 @@ impl<C> specs::System<C> for GameStateSystem {
         match self.state {
             TankFiring => self.firing(arg),
             ProjectilesTravelling => self.projectiles(arg),
+            ProjectilesImpacting => self.exploding(arg),
             CalculateNextPlayer => self.calculate_next(arg),
-            _ => (),
+            WinnerDeclared => arg.fetch(|_| ()),
         }
     }
 }
@@ -92,7 +95,9 @@ impl GameStateSystem {
             if players.len() <= 1 {
                 // TODO: Handle case where all tanks are gone without a winner
                 self.state = GameState::WinnerDeclared;
-                debug!("A winner has been declared!");
+                if players.len() == 1 {
+                    debug!("Player {} is the winner!", players.first().unwrap().player_number());
+                }
             }
             let mut active = w.write_resource_now::<ActivePlayer>();
             let next_tank = self.turn.next(players);
@@ -121,8 +126,17 @@ impl GameStateSystem {
         // Once all projectiles are gone, move to next state
         let projectiles = arg.fetch(|w| w.read::<Projectile>());
         if (&projectiles.check()).join().next().is_none() {
+            self.state = GameState::ProjectilesImpacting;
+            debug!("Projectiles are done travelling, waiting for any explosions to be resolved");
+        }
+    }
+
+    fn exploding(&mut self, arg: specs::RunArg) {
+        // Once all explosions are gone, move to next state
+        let explosives = arg.fetch(|w| w.read::<Explosion>());
+        if (&explosives.check()).join().next().is_none() {
             self.state = GameState::CalculateNextPlayer;
-            debug!("Projectiles are done travelling, waiting for next tank to be determined");
+            debug!("Explosions are done, waiting for next tank to be determined");
         }
     }
 }
