@@ -61,14 +61,14 @@ impl<C> specs::System<C> for FiringSystem {
                     None => continue,
                     Some(p) => p,
                 };
-                let power = 500.0 * tank.power_level;
+                let power = 150.0 + 100.0 * tank.power_level;
                 let vx = power * -tank.barrel_orient.sin();
                 let vy = power * tank.barrel_orient.cos();
                 let velocity = Velocity::from([vx, vy]);
                 let position = Position::new(tank_pos.position.x, tank_pos.position.y,
                     tank.barrel_orient, 7.0);
 
-                debug!("Angle: {:?}, Initial velocity: {:?}", tank.barrel_orient, velocity);
+                trace!("Angle: {:?}, Initial velocity: {:?}", tank.barrel_orient, velocity);
 
                 let eid = arg.create_pure();
                 projectiles.insert(eid, Projectile::new());

@@ -6,6 +6,11 @@ use sdl2;
 
 pub trait GameControls {
     fn fire(&mut self);
+
+    fn angle_decrease(&mut self);
+    fn angle_increase(&mut self);
+    fn power_increase(&mut self);
+    fn power_decrease(&mut self);
 }
 
 struct SDLWindow<G: GameControls> {
@@ -26,6 +31,18 @@ impl<G: GameControls> WindowFunctions<gfx_window_sdl::Device> for SDLWindow<G> {
                 Event::Quit { .. } |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => return RunStatus::Quit,
                 Event::KeyDown { keycode: Some(Keycode::Space), .. } => self.game_controls.fire(),
+                Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
+                    self.game_controls.angle_increase()
+                }
+                Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
+                    self.game_controls.angle_decrease()
+                }
+                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                    self.game_controls.power_increase()
+                }
+                Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
+                    self.game_controls.power_decrease()
+                }
                 _ => (),
             }
         }

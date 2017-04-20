@@ -21,18 +21,21 @@ pub struct TanksGame {
     height: usize,
 
     fire_system: Option<projectile::FiringSystem>,
+    tank_system: Option<tank::TankControlSystem>,
 }
 
 impl TanksGame {
     pub fn new() -> (TanksGame, TankControls) {
-        let (fire_control, fire_system) = projectile::FireControl::new();
+        let (fire_controller, fire_system) = projectile::FireControl::new();
+        let (tank_controller, tank_system) = tank::TankController::new();
         (TanksGame {
              width: 1000,
              height: 500,
 
              fire_system: Some(fire_system),
+             tank_system: Some(tank_system),
          },
-         TankControls::new(fire_control))
+         TankControls::new(fire_controller, tank_controller))
     }
 }
 
@@ -74,6 +77,9 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         let mut firing = None;
         ::std::mem::swap(&mut self.fire_system, &mut firing);
         let firing = firing.expect("Firing system has already been consumed!");
+        let mut tank_control = None;
+        ::std::mem::swap(&mut self.tank_system, &mut tank_control);
+        let tank_control = tank_control.expect("Tank Control system has already been consumed!");
 
         planner.add_system(draw, "drawing", 10);
         planner.add_system(terrain::PreDrawSystem::new(), "draw-prep-terrain", 15);
@@ -81,8 +87,11 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         planner.add_system(projectile::PreDrawSystem::new(), "draw-prep-projectile", 15);
         planner.add_system(InertiaSystem::new(), "inertia", 20);
         planner.add_system(GravitySystem::new(), "gravity", 25);
-        planner.add_system(projectile::CollisionSystem::new(), "collision-projectile", 35);
+        planner.add_system(projectile::CollisionSystem::new(),
+                           "collision-projectile",
+                           35);
         planner.add_system(firing, "firing", 40);
+        planner.add_system(tank_control, "tank-control", 41);
         planner.add_system(state::GameStateSystem::new(), "game-state", 50);
     }
     fn check_status(&mut self, _world: &mut specs::World) -> RunStatus {
