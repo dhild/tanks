@@ -6,7 +6,7 @@ mod firing;
 
 pub use self::collision::CollisionSystem;
 pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
-pub use self::firing::{FireControl, FiringSystem};
+pub use self::firing::FireControlSystem;
 
 #[derive(Debug)]
 pub struct Projectile;

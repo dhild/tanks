@@ -6,52 +6,32 @@ use std::sync::mpsc;
 use tank::Tank;
 
 #[derive(Debug)]
-enum TankControl {
-    AngleDecrease,
-    AngleIncrease,
-    PowerDecrease,
-    PowerIncrease,
-}
-
-#[derive(Debug,Clone)]
-pub struct TankController {
-    queue: mpsc::Sender<TankControl>,
-}
-
-impl TankController {
-    pub fn new() -> (TankController, TankControlSystem) {
-        let (tx, rx) = mpsc::channel();
-        (TankController { queue: tx }, TankControlSystem { queue: rx })
-    }
-
-    pub fn angle_increase(&mut self) {
-        if let Err(e) = self.queue.send(TankControl::AngleIncrease) {
-            warn!("Disconnected fire control: {}", e);
-        }
-    }
-
-    pub fn angle_decrease(&mut self) {
-        if let Err(e) = self.queue.send(TankControl::AngleDecrease) {
-            warn!("Disconnected fire control: {}", e);
-        }
-    }
-
-    pub fn power_increase(&mut self) {
-        if let Err(e) = self.queue.send(TankControl::PowerIncrease) {
-            warn!("Disconnected fire control: {}", e);
-        }
-    }
-
-    pub fn power_decrease(&mut self) {
-        if let Err(e) = self.queue.send(TankControl::PowerDecrease) {
-            warn!("Disconnected fire control: {}", e);
-        }
-    }
+pub enum TankControl {
+    AngleDecreasing,
+    AngleIncreasing,
+    AngleStop,
+    PowerDecreasing,
+    PowerIncreasing,
+    PowerStop,
 }
 
 #[derive(Debug)]
 pub struct TankControlSystem {
     queue: mpsc::Receiver<TankControl>,
+    angle_adjustment: Option<Rad<f32>>,
+    power_adjustment: Option<f32>,
+}
+
+impl TankControlSystem {
+    pub fn new() -> (TankControlSystem, mpsc::Sender<TankControl>) {
+        let (tx, rx) = mpsc::channel();
+        (TankControlSystem {
+             queue: rx,
+             angle_adjustment: None,
+             power_adjustment: None,
+         },
+         tx)
+    }
 }
 
 impl<C> specs::System<C> for TankControlSystem {
@@ -59,25 +39,38 @@ impl<C> specs::System<C> for TankControlSystem {
         let (mut tanks, active) =
             arg.fetch(|w| (w.write::<Tank>(), w.read_resource::<ActivePlayer>()));
         while let Ok(control) = self.queue.try_recv() {
-            let player = match active.player() {
-                None => continue,
-                Some(p) => p,
-            };
-            let mut tank = match tanks.get_mut(player.id()) {
-                None => continue,
-                Some(t) => t,
-            };
             match control {
-                TankControl::AngleDecrease => tank.barrel_orient -= Rad::from(Deg(0.5)),
-                TankControl::AngleIncrease => tank.barrel_orient += Rad::from(Deg(0.5)),
-                TankControl::PowerDecrease => tank.power_level -= 0.05,
-                TankControl::PowerIncrease => tank.power_level += 0.05,
+                TankControl::AngleDecreasing => self.angle_adjustment = Some(Rad::from(Deg(-0.5))),
+                TankControl::AngleIncreasing => self.angle_adjustment = Some(Rad::from(Deg(0.5))),
+                TankControl::AngleStop => self.angle_adjustment = None,
+                TankControl::PowerDecreasing => self.power_adjustment = Some(-0.05),
+                TankControl::PowerIncreasing => self.power_adjustment = Some(0.05),
+                TankControl::PowerStop => self.power_adjustment = None,
             }
+        }
+        let player = match active.player() {
+            None => return,
+            Some(p) => p,
+        };
+        let mut tank = match tanks.get_mut(player.id()) {
+            None => return,
+            Some(t) => t,
+        };
+        if let Some(angle) = self.angle_adjustment {
+            tank.barrel_orient += angle;
             tank.barrel_orient.normalize();
+            debug!("Tank {} angle updated: {:?}",
+                   player.player_number(),
+                   tank.barrel_orient);
+        }
+        if let Some(power) = self.power_adjustment {
+            tank.power_level += power;
             tank.power_level = tank.power_level.min(1.0);
             tank.power_level = tank.power_level.max(0.0);
-
-            debug!("Tank updated: {:?}", tank);
+            debug!("Tank {} power updated: {:?}",
+                   player.player_number(),
+                   tank.power_level);
         }
+
     }
 }

@@ -9,8 +9,10 @@ pub trait GameControls {
 
     fn angle_decrease(&mut self);
     fn angle_increase(&mut self);
+    fn angle_stop(&mut self);
     fn power_increase(&mut self);
     fn power_decrease(&mut self);
+    fn power_stop(&mut self);
 }
 
 struct SDLWindow<G: GameControls> {
@@ -37,11 +39,19 @@ impl<G: GameControls> WindowFunctions<gfx_window_sdl::Device> for SDLWindow<G> {
                 Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
                     self.game_controls.angle_decrease()
                 }
+                Event::KeyUp { keycode: Some(Keycode::Left), .. } |
+                Event::KeyUp { keycode: Some(Keycode::Right), .. } => {
+                    self.game_controls.angle_stop()
+                }
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
                     self.game_controls.power_increase()
                 }
                 Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
                     self.game_controls.power_decrease()
+                }
+                Event::KeyUp { keycode: Some(Keycode::Up), .. } |
+                Event::KeyUp { keycode: Some(Keycode::Down), .. } => {
+                    self.game_controls.power_stop()
                 }
                 _ => (),
             }

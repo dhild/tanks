@@ -6,7 +6,7 @@ use specs;
 mod control;
 mod draw;
 
-pub use self::control::{TankController, TankControlSystem};
+pub use self::control::{TankControl, TankControlSystem};
 pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 
 #[derive(Debug)]

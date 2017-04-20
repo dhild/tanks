@@ -1,37 +1,50 @@
 use engine::GameControls;
-use projectile::FireControl;
-use tank::TankController;
+use std::sync::mpsc;
+use tank::TankControl;
 
 #[derive(Debug,Clone)]
 pub struct TankControls {
-    fire_control: FireControl,
-    tank_control: TankController,
+    fire_control: mpsc::Sender<()>,
+    tank_control: mpsc::Sender<TankControl>,
 }
 
 impl TankControls {
-    pub fn new(fc: FireControl, tc: TankController) -> TankControls {
+    pub fn new(fc: mpsc::Sender<()>, tc: mpsc::Sender<TankControl>) -> TankControls {
         TankControls {
             fire_control: fc,
             tank_control: tc,
+        }
+    }
+
+    fn tc(&mut self, value: TankControl) {
+        if self.tank_control.send(value).is_err() {
+            warn!("Controls disconnected");
         }
     }
 }
 
 impl GameControls for TankControls {
     fn fire(&mut self) {
-        self.fire_control.fire()
+        if self.fire_control.send(()).is_err() {
+            warn!("Controls disconnected");
+        }
     }
-
     fn angle_increase(&mut self) {
-        self.tank_control.angle_increase()
+        self.tc(TankControl::AngleIncreasing)
     }
     fn angle_decrease(&mut self) {
-        self.tank_control.angle_decrease()
+        self.tc(TankControl::AngleDecreasing)
+    }
+    fn angle_stop(&mut self) {
+        self.tc(TankControl::AngleStop)
     }
     fn power_increase(&mut self) {
-        self.tank_control.power_increase()
+        self.tc(TankControl::PowerIncreasing)
     }
     fn power_decrease(&mut self) {
-        self.tank_control.power_decrease()
+        self.tc(TankControl::PowerDecreasing)
+    }
+    fn power_stop(&mut self) {
+        self.tc(TankControl::PowerStop)
     }
 }

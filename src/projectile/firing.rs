@@ -6,30 +6,19 @@ use specs;
 use std::sync::mpsc;
 use tank::Tank;
 
-#[derive(Debug,Clone)]
-pub struct FireControl {
-    queue: mpsc::Sender<()>,
-}
-
-impl FireControl {
-    pub fn new() -> (FireControl, FiringSystem) {
-        let (tx, rx) = mpsc::channel();
-        (FireControl { queue: tx }, FiringSystem { queue: rx })
-    }
-
-    pub fn fire(&mut self) {
-        if let Err(e) = self.queue.send(()) {
-            warn!("Disconnected fire control: {}", e);
-        }
-    }
-}
-
 #[derive(Debug)]
-pub struct FiringSystem {
+pub struct FireControlSystem {
     queue: mpsc::Receiver<()>,
 }
 
-impl<C> specs::System<C> for FiringSystem {
+impl FireControlSystem {
+    pub fn new() -> (FireControlSystem, mpsc::Sender<()>) {
+        let (tx, rx) = mpsc::channel();
+        (FireControlSystem { queue: rx }, tx)
+    }
+}
+
+impl<C> specs::System<C> for FireControlSystem {
     fn run(&mut self, arg: specs::RunArg, _: C) {
         let (tanks,
              mut projectiles,
