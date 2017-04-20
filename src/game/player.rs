@@ -20,7 +20,7 @@ impl Players {
     pub fn create(world: &mut specs::World, count: usize) {
         let dx = {
             let dim = world.read_resource_now::<Dimensions>();
-            dim.width as f32 / ((count + 1) as f32)
+            dim.game_width() as f32 / ((count + 1) as f32)
         };
         let mut rng = rand::thread_rng();
         let mut players = Vec::new();

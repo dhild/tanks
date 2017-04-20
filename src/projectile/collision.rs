@@ -21,7 +21,7 @@ enum Collision {
     Terrain,
 }
 fn check_collision(p: &Position, dim: &Dimensions, terrain: &Terrain) -> Collision {
-    if p.position.x < 0.0 || p.position.x > (dim.width as f32) || p.position.y < 0.0 {
+    if p.position.x < 0.0 || p.position.x > (dim.game_width() as f32) || p.position.y < 0.0 {
         info!("Projectile went out of bounds at {:?}", p.position);
         Collision::OutOfBounds
     } else if terrain.get_height(p.position.x) > p.position.y {

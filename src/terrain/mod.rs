@@ -1,32 +1,30 @@
 use cgmath::Rad;
 use cgmath::prelude::*;
 use rand::{self, Rng};
+use physics::Dimensions;
 
 mod draw;
 
 pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 
-pub fn generate(width: usize, height: usize, points: usize) -> Terrain {
-    assert!(width > 3 && height > 3 && width < u16::max_value() as usize &&
-            height < u16::max_value() as usize);
+pub fn generate(dim: &Dimensions, points: usize) -> Terrain {
+    let noise = Noise::new(dim.game_width(), dim.game_height(), points);
 
-    let noise = Noise::new(width, height, points);
+    let mut hmap = Vec::with_capacity(dim.game_width() as usize);
 
-    let mut hmap = Vec::with_capacity(width);
-
-    for x in 0..width {
+    for x in 0..dim.game_width() {
         hmap.push(noise.interp(x) as u16);
     }
 
     Terrain {
-        max_height: height,
+        max_height: dim.game_height(),
         heightmap: hmap,
     }
 }
 
 #[derive(Debug)]
 pub struct Terrain {
-    pub max_height: usize,
+    pub max_height: u32,
     pub heightmap: Vec<u16>,
 }
 
@@ -65,7 +63,7 @@ struct Noise {
 }
 
 impl Noise {
-    fn new(width: usize, height: usize, count: usize) -> Noise {
+    fn new(width: u32, height: u32, count: usize) -> Noise {
         let min = (height as f64) * 0.3;
         let max = (height as f64) * 0.7;
         let mut rng = rand::thread_rng();
@@ -110,7 +108,7 @@ impl Noise {
         i
     }
 
-    fn interp(&self, x: usize) -> f64 {
+    fn interp(&self, x: u32) -> f64 {
         let x = x as f64;
         let k0 = self.find_k(x);
         let k1 = k0 + 1;

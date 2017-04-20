@@ -7,7 +7,7 @@ use std::time;
 
 pub trait GameFunctions<D: gfx::Device, F: gfx::Factory<D::Resources>, ColorFormat>
      {
-    fn setup_world(&mut self, _world: &mut specs::World);
+    fn setup_world(&mut self, world: &mut specs::World, viewport_size: (u32, u32));
     fn setup_planner(&mut self,
                      planner: &mut specs::Planner<Delta>,
                      encoder_queue: EncoderQueue<D>,
@@ -49,20 +49,20 @@ impl<D, F, ColorFormat> Game<D, F, ColorFormat>
     pub fn run<GF, WF, CBF>(&mut self,
                             mut game_functions: GF,
                             mut window_functions: WF,
-                            mut create_command_buffer: CBF)
+                            mut create_command_buffer: CBF,
+                            viewport_size: (u32, u32))
                             -> RunStatus
         where GF: 'static + Send + GameFunctions<D, F, ColorFormat>,
               WF: WindowFunctions<D>,
               CBF: FnMut(&mut F) -> D::CommandBuffer
     {
-        let (mut device_renderer, enc_queue) = DeviceRenderer::new(2, || {
-            create_command_buffer(&mut self.factory)
-        });
+        let (mut device_renderer, enc_queue) =
+            DeviceRenderer::new(2, || create_command_buffer(&mut self.factory));
 
         let rtv = self.rtv.clone();
         let mut plan = {
             let mut w = specs::World::new();
-            game_functions.setup_world(&mut w);
+            game_functions.setup_world(&mut w, viewport_size);
             let mut plan = specs::Planner::new(w);
             game_functions.setup_planner(&mut plan, enc_queue, &mut self.factory, rtv);
             plan

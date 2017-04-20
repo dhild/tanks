@@ -18,9 +18,6 @@ pub use self::state::ActivePlayer;
 
 #[derive(Debug)]
 pub struct TanksGame {
-    width: usize,
-    height: usize,
-
     fire_system: Option<projectile::FireControlSystem>,
     tank_system: Option<tank::TankControlSystem>,
 }
@@ -30,9 +27,6 @@ impl TanksGame {
         let (fire_system, fire_control) = projectile::FireControlSystem::new();
         let (tank_system, tank_control) = tank::TankControlSystem::new();
         (TanksGame {
-             width: 1000,
-             height: 500,
-
              fire_system: Some(fire_system),
              tank_system: Some(tank_system),
          },
@@ -45,7 +39,7 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
           D::CommandBuffer: Send,
           F: gfx::Factory<D::Resources>
 {
-    fn setup_world(&mut self, world: &mut specs::World) {
+    fn setup_world(&mut self, world: &mut specs::World, viewport_size: (u32, u32)) {
         world.register::<Position>();
         world.register::<Velocity>();
         world.register::<Mass>();
@@ -57,12 +51,10 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         world.register::<explosion::Explosion>();
         world.register::<explosion::Drawable>();
 
-        world.add_resource(Dimensions {
-                               width: self.width,
-                               height: self.height,
-                           });
+        let dimensions = Dimensions::new(viewport_size.0, viewport_size.1);
+        world.add_resource(terrain::generate(&dimensions, 10));
+        world.add_resource(dimensions);
         world.add_resource(ActivePlayer::new());
-        world.add_resource(terrain::generate(self.width, self.height, 10));
         world.create().with(terrain::Drawable::new()).build();
         Players::create(world, 4);
     }

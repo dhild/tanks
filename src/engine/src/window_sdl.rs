@@ -89,11 +89,16 @@ pub fn run<CF, DF, GF, GC>(title: &str, game_functions: GF, game_controls: GC) -
     let (window, _gl_context, device, factory, rtv, _dsv) =
         gfx_window_sdl::init::<CF, DF>(builder).expect("Unable to create a window");
 
-    let window = SDLWindow {
+    let viewport_size = window.drawable_size();
+
+    let window_adapter = SDLWindow {
         window: window,
         event_pump: event_pump,
         game_controls: game_controls,
     };
 
-    Game::new(device, factory, rtv).run(game_functions, window, |f| f.create_command_buffer())
+    Game::new(device, factory, rtv).run(game_functions,
+                                        window_adapter,
+                                        |f| f.create_command_buffer(),
+                                        viewport_size)
 }
