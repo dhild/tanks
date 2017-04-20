@@ -1,5 +1,6 @@
 use draw::*;
 use engine::{EncoderQueue, GameFunctions, RunStatus};
+use explosion;
 use gfx;
 use physics::*;
 use projectile;
@@ -53,6 +54,8 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         world.register::<terrain::Drawable>();
         world.register::<projectile::Drawable>();
         world.register::<projectile::Projectile>();
+        world.register::<explosion::Explosion>();
+        world.register::<explosion::Drawable>();
 
         world.add_resource(Dimensions {
                                width: self.width,
@@ -85,14 +88,14 @@ impl<D, F> GameFunctions<D, F, ColorFormat> for TanksGame
         planner.add_system(terrain::PreDrawSystem::new(), "draw-prep-terrain", 15);
         planner.add_system(tank::PreDrawSystem::new(), "draw-prep-tank", 15);
         planner.add_system(projectile::PreDrawSystem::new(), "draw-prep-projectile", 15);
-        planner.add_system(projectile::CollisionSystem::new(),
-                           "collision-projectile",
-                           20);
+        planner.add_system(explosion::PreDrawSystem::new(), "draw-prep-explosion", 15);
+        planner.add_system(projectile::CollisionSystem::new(), "collide-projectile", 20);
         planner.add_system(InertiaSystem::new(), "inertia", 30);
         planner.add_system(GravitySystem::new(), "gravity", 35);
-        planner.add_system(firing, "firing", 40);
-        planner.add_system(tank_control, "tank-control", 41);
+        planner.add_system(explosion::ExplosionSystem::new(), "explosion", 35);
         planner.add_system(state::GameStateSystem::new(), "game-state", 50);
+        planner.add_system(firing, "firing", 60);
+        planner.add_system(tank_control, "tank-control", 61);
     }
     fn check_status(&mut self, _world: &mut specs::World) -> RunStatus {
         RunStatus::Running

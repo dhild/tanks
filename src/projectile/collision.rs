@@ -1,4 +1,8 @@
+use cgmath::Rad;
+use cgmath::prelude::*;
+use explosion;
 use physics::{Dimensions, Position};
+use projectile::Projectile;
 use specs;
 use terrain::Terrain;
 
@@ -31,23 +35,33 @@ fn check_collision(p: &Position, dim: &Dimensions, terrain: &Terrain) -> Collisi
 impl<C> specs::System<C> for CollisionSystem {
     fn run(&mut self, arg: specs::RunArg, _: C) {
         use specs::Join;
-        let (positions, dim, entities, terrain) =
+        let (mut positions, projectiles, mut explosives, mut drawables, dim, entities, terrain) =
             arg.fetch(|w| {
-                          (w.read::<Position>(),
-                           w.read_resource::<Dimensions>(),
-                           w.entities(),
-                           w.read_resource::<Terrain>())
-                      });
+                (w.write::<Position>(),
+                 w.read::<Projectile>(),
+                 w.write::<explosion::Explosion>(),
+                 w.write::<explosion::Drawable>(),
+                 w.read_resource::<Dimensions>(),
+                 w.entities(),
+                 w.read_resource::<Terrain>())
+            });
 
-        for (p, e) in (&positions, &entities).join() {
+        let mut to_create = Vec::new();
+        for (_, p, e) in (&projectiles.check(), &positions, &entities).join() {
             match check_collision(p, &dim, &terrain) {
                 Collision::None => (),
                 Collision::OutOfBounds => arg.delete(e),
                 Collision::Terrain => {
-                    arg.delete(e)
-                    // TODO: Create an explosion at this point
+                    arg.delete(e);
+                    to_create.push(p.position);
                 }
             }
+        }
+        for p in to_create {
+            let id = arg.create_pure();
+            positions.insert(id, Position::new(p.x, p.y, Rad::zero(), 50.0));
+            explosives.insert(id, explosion::Explosion::new());
+            drawables.insert(id, explosion::Drawable::new());
         }
     }
 }

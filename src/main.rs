@@ -10,6 +10,7 @@ extern crate specs;
 extern crate engine;
 
 mod draw;
+mod explosion;
 mod game;
 mod physics;
 mod projectile;
