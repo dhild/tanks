@@ -11,11 +11,11 @@ pub struct Drawable {
 }
 
 impl Drawable {
-    pub fn new(color: [f32; 3]) -> Drawable {
+    pub fn new() -> Drawable {
         Drawable {
             locals: Locals {
                 transform: Matrix4::identity().into(),
-                color: color,
+                color: [1.0, 1.0, 1.0],
             },
         }
     }

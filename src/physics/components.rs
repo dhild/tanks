@@ -57,6 +57,15 @@ impl Velocity {
     }
 }
 
+impl<I: Into<Vector2<f32>>> From<I> for Velocity {
+    fn from(v: I) -> Velocity {
+        Velocity {
+            velocity: v.into(),
+            angular_velocity: Rad::zero(),
+        }
+    }
+}
+
 impl specs::Component for Velocity {
     type Storage = specs::VecStorage<Velocity>;
 }

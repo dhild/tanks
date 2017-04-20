@@ -9,16 +9,14 @@ pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 
 #[derive(Debug)]
 pub struct Tank {
-    pub player_number: u8,
     pub barrel_orient: Rad<f32>,
     pub power_level: f32,
 }
 
 impl Tank {
-    pub fn new(player_number: u8) -> Tank {
+    pub fn new() -> Tank {
         let mut rng = rand::thread_rng();
         Tank {
-            player_number: player_number,
             barrel_orient: Rad::from(Deg(rng.gen_range(-45.0, 45.0))),
             power_level: 0.5,
         }

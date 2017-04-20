@@ -4,12 +4,17 @@ use gfx;
 use gfx_window_sdl;
 use sdl2;
 
-struct SDLWindow {
-    window: sdl2::video::Window,
-    event_pump: sdl2::EventPump,
+pub trait GameControls {
+    fn fire(&mut self);
 }
 
-impl WindowFunctions<gfx_window_sdl::Device> for SDLWindow {
+struct SDLWindow<G: GameControls> {
+    window: sdl2::video::Window,
+    event_pump: sdl2::EventPump,
+    game_controls: G,
+}
+
+impl<G: GameControls> WindowFunctions<gfx_window_sdl::Device> for SDLWindow<G> {
     fn swap_window(&mut self) {
         self.window.gl_swap_window();
     }
@@ -20,6 +25,7 @@ impl WindowFunctions<gfx_window_sdl::Device> for SDLWindow {
             match event {
                 Event::Quit { .. } |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => return RunStatus::Quit,
+                Event::KeyDown { keycode: Some(Keycode::Space), .. } => self.game_controls.fire(),
                 _ => (),
             }
         }
@@ -27,8 +33,9 @@ impl WindowFunctions<gfx_window_sdl::Device> for SDLWindow {
     }
 }
 
-pub fn run<CF, DF, GF>(title: &str, game_functions: GF) -> RunStatus
-    where GF: 'static + Send + GameFunctions<gfx_window_sdl::Device, gfx_window_sdl::Factory, CF>,
+pub fn run<CF, DF, GF, GC>(title: &str, game_functions: GF, game_controls: GC) -> RunStatus
+    where GC: GameControls,
+          GF: 'static + Send + GameFunctions<gfx_window_sdl::Device, gfx_window_sdl::Factory, CF>,
           CF: Clone + gfx::format::Formatted,
           DF: gfx::format::Formatted,
           <CF as gfx::format::Formatted>::Surface: gfx::format::RenderSurface,
@@ -47,7 +54,6 @@ pub fn run<CF, DF, GF>(title: &str, game_functions: GF) -> RunStatus
     let gl_attr = video.gl_attr();
     #[cfg(debug_assertions)]
     gl_attr.set_context_flags().debug().set();
-
     //gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(3, 2);
     let mut builder = video.window(title, 1024, 728);
@@ -59,6 +65,7 @@ pub fn run<CF, DF, GF>(title: &str, game_functions: GF) -> RunStatus
     let window = SDLWindow {
         window: window,
         event_pump: event_pump,
+        game_controls: game_controls,
     };
 
     Game::new(device, factory, rtv).run(game_functions, window, |f| f.create_command_buffer())

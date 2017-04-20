@@ -1,17 +1,17 @@
+use game::{Player, Players};
 use projectile::Projectile;
 use specs::{self, Join};
-use tank::Tank;
 
 #[derive(Debug)]
 pub struct ActivePlayer {
-    player: Option<u8>,
+    player: Option<Player>,
 }
 
 impl ActivePlayer {
     pub fn new() -> ActivePlayer {
         ActivePlayer { player: None }
     }
-    pub fn player_number(&self) -> Option<u8> {
+    pub fn player(&self) -> Option<Player> {
         self.player
     }
 }
@@ -27,7 +27,7 @@ enum GameState {
 #[derive(Debug)]
 struct Turn {
     number: u32,
-    remaining_players: Vec<u8>,
+    remaining_players: Vec<Player>,
 }
 
 impl Turn {
@@ -38,24 +38,20 @@ impl Turn {
         }
     }
 
-    fn next<'a, I>(&mut self, tanks: I) -> Option<u8>
-        where I: Iterator<Item = &'a Tank>
-    {
-        let mut v: Vec<u8> = tanks.map(|t| t.player_number).collect();
+    fn next(&mut self, mut remaining: Vec<Player>) -> Option<Player> {
         if self.remaining_players.is_empty() {
             // Sort so the player order is in reverse
-            v.sort_by(|a, b| b.cmp(a));
+            remaining.sort_by(|a, b| b.player_number().cmp(&a.player_number()));
             self.number += 1;
-            self.remaining_players = v;
+            self.remaining_players = remaining;
             debug!("All tanks have fired, transitioned to next turn {:?}", self);
             self.remaining_players.pop()
         } else {
-            while let Some(player_number) = self.remaining_players.pop() {
-                if v.contains(&player_number) {
-                    return Some(player_number);
+            while let Some(player) = self.remaining_players.pop() {
+                if remaining.contains(&player) {
+                    return Some(player);
                 } else {
-                    debug!("Skipping tank {} since it has been destroyed",
-                           player_number);
+                    debug!("Skipping tank {:?} since it has been destroyed", player);
                 }
             }
             None
@@ -90,15 +86,16 @@ impl GameStateSystem {
     }
 
     fn calculate_next(&mut self, arg: specs::RunArg) {
-        let (tanks, mut active) =
-            arg.fetch(|w| (w.read::<Tank>(), w.write_resource::<ActivePlayer>()));
-        let tank_count = (&tanks.check()).join().count();
-        if tank_count <= 1 {
-            // TODO: Handle case where all tanks are gone without a winner (tank_count == 0)
-            self.state = GameState::WinnerDeclared;
-            debug!("A winner has been declared!");
-        } else {
-            let next_tank = self.turn.next((&tanks).join());
+        arg.fetch(|w| {
+            let players = w.read_resource_now::<Players>();
+            let players = players.get_remaining(w);
+            if players.len() <= 1 {
+                // TODO: Handle case where all tanks are gone without a winner
+                self.state = GameState::WinnerDeclared;
+                debug!("A winner has been declared!");
+            }
+            let mut active = w.write_resource_now::<ActivePlayer>();
+            let next_tank = self.turn.next(players);
             active.player = next_tank;
             debug!("Next tank to fire is {:?}", next_tank);
             if next_tank.is_some() {
@@ -106,7 +103,7 @@ impl GameStateSystem {
             } else {
                 warn!("Unable to determine next tank to fire");
             }
-        }
+        });
     }
 
     fn firing(&mut self, arg: specs::RunArg) {

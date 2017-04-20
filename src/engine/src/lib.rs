@@ -19,4 +19,4 @@ pub type Delta = f32;
 
 pub use game::GameFunctions;
 pub use renderer::EncoderQueue;
-pub use window_sdl::run;
+pub use window_sdl::{GameControls, run};
