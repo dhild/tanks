@@ -4,11 +4,16 @@ version = "0.1.0"
 authors = ["D. Ryan Hild <d.ryan.hild@gmail.com>"]
 
 [dependencies]
-log = "^0.3"
+log = "0.3"
 gfx = "0.14"
-gfx_window_sdl = "0.5"
-sdl2 = "0.28"
+gfx_device_gl = { version = "0.13", optional = true }
+gfx_window_glutin = { version = "0.14", optional = true }
+glutin = { version = "0.7", optional = true }
+gfx_window_sdl = { version = "0.5", optional = true }
+sdl2 = { version = "0.28", optional = true }
 specs = "0.8"
 
 [features]
-default = []
+default = ["window_glutin"]
+window_glutin = ["gfx_window_glutin", "glutin", "gfx_device_gl"]
+window_sdl = ["gfx_window_sdl", "sdl2"]

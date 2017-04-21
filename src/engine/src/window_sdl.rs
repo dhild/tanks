@@ -4,17 +4,6 @@ use gfx;
 use gfx_window_sdl;
 use sdl2;
 
-pub trait GameControls {
-    fn fire(&mut self);
-
-    fn angle_decrease(&mut self);
-    fn angle_increase(&mut self);
-    fn angle_stop(&mut self);
-    fn power_increase(&mut self);
-    fn power_decrease(&mut self);
-    fn power_stop(&mut self);
-}
-
 struct SDLWindow<G: GameControls> {
     window: sdl2::video::Window,
     event_pump: sdl2::EventPump,

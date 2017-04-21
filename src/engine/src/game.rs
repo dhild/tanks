@@ -1,35 +1,17 @@
-use super::Delta;
 use super::RunStatus;
 use gfx;
 use renderer::*;
 use specs;
 use std::time;
+use traits::*;
 
-pub trait GameFunctions<D: gfx::Device, F: gfx::Factory<D::Resources>, ColorFormat>
-     {
-    fn setup_world(&mut self, world: &mut specs::World, viewport_size: (u32, u32));
-    fn setup_planner(&mut self,
-                     planner: &mut specs::Planner<Delta>,
-                     encoder_queue: EncoderQueue<D>,
-                     factory: &mut F,
-                     render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>);
-    fn check_status(&mut self, _world: &mut specs::World) -> RunStatus {
-        RunStatus::Running
-    }
-}
-
-pub trait WindowFunctions<D: gfx::Device> {
-    fn swap_window(&mut self);
-    fn poll_events(&mut self) -> RunStatus;
-}
-
-pub struct Game<D: gfx::Device, F: gfx::Factory<D::Resources>, ColorFormat> {
+pub struct GameLoop<D: gfx::Device, F: gfx::Factory<D::Resources>, ColorFormat> {
     device: D,
     factory: F,
     rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,
 }
 
-impl<D, F, ColorFormat> Game<D, F, ColorFormat>
+impl<D, F, ColorFormat> GameLoop<D, F, ColorFormat>
     where D: 'static + gfx::Device,
           D::CommandBuffer: 'static + Send,
           F: gfx::Factory<D::Resources>,
@@ -38,8 +20,8 @@ impl<D, F, ColorFormat> Game<D, F, ColorFormat>
     pub fn new(device: D,
                factory: F,
                rtv: gfx::handle::RenderTargetView<D::Resources, ColorFormat>)
-               -> Game<D, F, ColorFormat> {
-        Game {
+               -> GameLoop<D, F, ColorFormat> {
+        GameLoop {
             device: device,
             factory: factory,
             rtv: rtv,
