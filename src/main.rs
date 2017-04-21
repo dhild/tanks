@@ -6,19 +6,11 @@ extern crate log;
 extern crate log4rs;
 extern crate rand;
 extern crate specs;
-#[cfg(feature = "gfx_device_gl")]
 extern crate gfx_device_gl;
-#[cfg(feature = "glutin")]
 extern crate glutin;
-#[cfg(feature = "gfx_window_glutin")]
 extern crate gfx_window_glutin;
-#[cfg(feature = "sdl2")]
-extern crate sdl2;
-#[cfg(feature = "gfx_window_sdl")]
-extern crate gfx_window_sdl;
 
 mod draw;
-mod engine;
 mod explosion;
 mod game;
 mod physics;
@@ -26,15 +18,24 @@ mod projectile;
 mod tank;
 mod terrain;
 
-use draw::{ColorFormat, DepthFormat};
-use game::{TankControls, TanksGame};
+use game::QuitStatus::*;
 
 fn main() {
+    std::env::set_var("RUST_BACKTRACE", "1");
     configure_logging();
     debug!("Starting up....");
 
-    let (game, controls) = TanksGame::new();
-    engine::run::<ColorFormat, DepthFormat, TanksGame, TankControls>("Tanks", game, controls);
+    let mut window = draw::GlutinWindow::new();
+    loop {
+        match game::run(&mut window) {
+            Quit => {
+                info!("Game was quit");
+                break;
+            }
+            PlayerWon { player, turn } => info!("Player {} won on turn {}", player, turn),
+            Draw { turn } => info!("Draw on turn {}", turn),
+        }
+    }
 }
 
 fn configure_logging() {
@@ -51,7 +52,7 @@ fn configure_logging() {
 
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
-        .logger(Logger::builder().build("gfx_device_gl", LogLevelFilter::Info))
+        // .logger(Logger::builder().build("gfx_device_gl", LogLevelFilter::Info))
         .logger(Logger::builder().build("ticketed_lock", LogLevelFilter::Info))
         .build(Root::builder()
                    .appender("stdout")

@@ -1,13 +1,10 @@
-use engine::EncoderQueue;
+use draw::{ColorFormat, EncoderQueue};
 use explosion;
 use gfx;
 use projectile;
 use specs;
 use tank;
 use terrain;
-
-pub type ColorFormat = gfx::format::Rgba8;
-pub type DepthFormat = gfx::format::DepthStencil;
 
 pub struct DrawSystem<D: gfx::Device> {
     render_target_view: gfx::handle::RenderTargetView<D::Resources, ColorFormat>,

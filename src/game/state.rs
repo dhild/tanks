@@ -1,7 +1,8 @@
 use explosion::Explosion;
-use game::{Player, Players};
+use game::{Player, Players, QuitStatus};
 use projectile::Projectile;
 use specs::{self, Join};
+use std::sync::mpsc;
 
 #[derive(Debug)]
 pub struct ActivePlayer {
@@ -18,12 +19,12 @@ impl ActivePlayer {
 }
 
 #[derive(Debug)]
-enum GameState {
+pub enum GameState {
     TankFiring,
     ProjectilesTravelling,
     ProjectilesImpacting,
     CalculateNextPlayer,
-    WinnerDeclared,
+    GameOver,
 }
 
 #[derive(Debug)]
@@ -65,6 +66,7 @@ impl Turn {
 pub struct GameStateSystem {
     state: GameState,
     turn: Turn,
+    result: mpsc::Sender<QuitStatus>,
 }
 
 impl<C> specs::System<C> for GameStateSystem {
@@ -75,31 +77,45 @@ impl<C> specs::System<C> for GameStateSystem {
             ProjectilesTravelling => self.projectiles(arg),
             ProjectilesImpacting => self.exploding(arg),
             CalculateNextPlayer => self.calculate_next(arg),
-            WinnerDeclared => arg.fetch(|_| ()),
+            GameOver => arg.fetch(|_| ()),
         }
     }
 }
 
 impl GameStateSystem {
-    pub fn new() -> GameStateSystem {
-        GameStateSystem {
-            state: GameState::CalculateNextPlayer,
-            turn: Turn::first(),
-        }
+    pub fn new() -> (GameStateSystem, mpsc::Receiver<QuitStatus>) {
+        let (tx, rx) = mpsc::channel();
+
+        (GameStateSystem {
+             state: GameState::CalculateNextPlayer,
+             turn: Turn::first(),
+             result: tx,
+         },
+         rx)
     }
 
     fn calculate_next(&mut self, arg: specs::RunArg) {
         arg.fetch(|w| {
             let players = w.read_resource_now::<Players>();
             let players = players.get_remaining(w);
-            if players.len() <= 1 {
-                self.state = GameState::WinnerDeclared;
-                if players.len() == 1 {
-                    info!("Player {} is the winner!",
-                          players.first().unwrap().player_number());
-                } else {
-                    info!("All players were destroyed!");
-                }
+            if players.is_empty() {
+                self.state = GameState::GameOver;
+                info!("All players were destroyed!");
+                self.result
+                    .send(QuitStatus::Draw { turn: self.turn.number })
+                    .expect("Unable to send final status");
+            } else if players.len() == 1 {
+                self.state = GameState::GameOver;
+                let player = players.first().unwrap().player_number();
+                info!("Player {} is the winner after {} turns!",
+                      player,
+                      self.turn.number);
+                self.result
+                    .send(QuitStatus::PlayerWon {
+                              player: player,
+                              turn: self.turn.number,
+                          })
+                    .expect("Unable to send final status");
             } else {
                 {
                     use tank::Tank;

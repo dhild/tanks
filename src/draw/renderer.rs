@@ -12,17 +12,15 @@ pub struct DeviceRenderer<D: gfx::Device> {
 }
 
 impl<D: gfx::Device> DeviceRenderer<D> {
-    pub fn new<CBF>(count: usize,
-                    mut create_command_buffer: CBF)
-                    -> (DeviceRenderer<D>, EncoderQueue<D>)
-        where CBF: FnMut() -> D::CommandBuffer
-    {
+    pub fn new(buffers: Vec<D::CommandBuffer>) -> (DeviceRenderer<D>, EncoderQueue<D>) {
         let (a_send, b_recv) = mpsc::channel();
         let (b_send, a_recv) = mpsc::channel();
 
-        for _ in 0..count {
-            let encoder = gfx::Encoder::from(create_command_buffer());
-            a_send.send(encoder).unwrap();
+        for cb in buffers {
+            let encoder = gfx::Encoder::from(cb);
+            a_send
+                .send(encoder)
+                .expect("Unable to send initial command buffers");
         }
 
         (DeviceRenderer {

@@ -23,7 +23,7 @@ impl Explosion {
     }
 
     pub fn radius(&self) -> f32 {
-        75.0 * Deg(self.time_elapsed / 10.0).sin()
+        Deg(25.0 * self.time_elapsed).sin()
     }
 }
 
@@ -62,7 +62,7 @@ impl specs::System<f32> for ExplosionSystem {
                 damage_time += e.time_remaining;
             }
             if damage_time > 0.0 {
-                damage_areas.push((p.position, e.radius(), damage_time * 10.0));
+                damage_areas.push((p.position, e.radius(), damage_time * 11.0));
             }
         }
         for (t, p, id) in (&mut tanks, &positions, &entities).join() {

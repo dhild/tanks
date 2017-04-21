@@ -1,4 +1,3 @@
-use engine::GameControls;
 use std::sync::mpsc;
 use tank::TankControl;
 
@@ -21,30 +20,27 @@ impl TankControls {
             warn!("Controls disconnected");
         }
     }
-}
-
-impl GameControls for TankControls {
-    fn fire(&mut self) {
+    pub fn fire(&mut self) {
         if self.fire_control.send(()).is_err() {
             warn!("Controls disconnected");
         }
     }
-    fn angle_increase(&mut self) {
+    pub fn angle_increase(&mut self) {
         self.tc(TankControl::AngleIncreasing)
     }
-    fn angle_decrease(&mut self) {
+    pub fn angle_decrease(&mut self) {
         self.tc(TankControl::AngleDecreasing)
     }
-    fn angle_stop(&mut self) {
+    pub fn angle_stop(&mut self) {
         self.tc(TankControl::AngleStop)
     }
-    fn power_increase(&mut self) {
+    pub fn power_increase(&mut self) {
         self.tc(TankControl::PowerIncreasing)
     }
-    fn power_decrease(&mut self) {
+    pub fn power_decrease(&mut self) {
         self.tc(TankControl::PowerDecreasing)
     }
-    fn power_stop(&mut self) {
+    pub fn power_stop(&mut self) {
         self.tc(TankControl::PowerStop)
     }
 }
