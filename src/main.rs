@@ -6,10 +6,19 @@ extern crate log;
 extern crate log4rs;
 extern crate rand;
 extern crate specs;
-
-extern crate engine;
+#[cfg(feature = "gfx_device_gl")]
+extern crate gfx_device_gl;
+#[cfg(feature = "glutin")]
+extern crate glutin;
+#[cfg(feature = "gfx_window_glutin")]
+extern crate gfx_window_glutin;
+#[cfg(feature = "sdl2")]
+extern crate sdl2;
+#[cfg(feature = "gfx_window_sdl")]
+extern crate gfx_window_sdl;
 
 mod draw;
+mod engine;
 mod explosion;
 mod game;
 mod physics;

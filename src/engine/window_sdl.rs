@@ -1,5 +1,6 @@
 use super::RunStatus;
-use game::{Game, GameFunctions, WindowFunctions};
+use engine::game::GameLoop;
+use engine::traits::*;
 use gfx;
 use gfx_window_sdl;
 use sdl2;
@@ -86,8 +87,8 @@ pub fn run<CF, DF, GF, GC>(title: &str, game_functions: GF, game_controls: GC) -
         game_controls: game_controls,
     };
 
-    Game::new(device, factory, rtv).run(game_functions,
-                                        window_adapter,
-                                        |f| f.create_command_buffer(),
-                                        viewport_size)
+    GameLoop::new(device, factory, rtv).run(game_functions,
+                                            window_adapter,
+                                            |f| f.create_command_buffer(),
+                                            viewport_size)
 }

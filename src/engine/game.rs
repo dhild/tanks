@@ -1,9 +1,9 @@
 use super::RunStatus;
+use engine::renderer::*;
+use engine::traits::*;
 use gfx;
-use renderer::*;
 use specs;
 use std::time;
-use traits::*;
 
 pub struct GameLoop<D: gfx::Device, F: gfx::Factory<D::Resources>, ColorFormat> {
     device: D,

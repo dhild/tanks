@@ -1,10 +1,10 @@
 use super::RunStatus;
-use game::GameLoop;
+use engine::game::GameLoop;
+use engine::traits::*;
 use gfx;
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin;
-use traits::*;
 
 struct GlutinWindow<G: GameControls> {
     window: glutin::Window,

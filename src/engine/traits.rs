@@ -1,8 +1,7 @@
-use super::RunStatus;
+use super::{Delta, RunStatus};
+use engine::renderer::EncoderQueue;
 use gfx;
-use renderer::EncoderQueue;
 use specs;
-use super::Delta;
 
 pub trait GameFunctions<D: gfx::Device, F: gfx::Factory<D::Resources>, ColorFormat>
     : Send {
