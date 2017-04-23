@@ -1,5 +1,5 @@
 use cgmath::prelude::*;
-use game::ActivePlayer;
+use game::{ActivePlayer, Player};
 use physics::*;
 use projectile::{Drawable, Projectile};
 use specs;
@@ -8,13 +8,18 @@ use tank::Tank;
 
 #[derive(Debug)]
 pub struct FireControlSystem {
+    player: Player,
     queue: mpsc::Receiver<()>,
 }
 
 impl FireControlSystem {
-    pub fn new() -> (FireControlSystem, mpsc::Sender<()>) {
+    pub fn new(player: Player) -> (FireControlSystem, mpsc::Sender<()>) {
         let (tx, rx) = mpsc::channel();
-        (FireControlSystem { queue: rx }, tx)
+        (FireControlSystem {
+             player: player,
+             queue: rx,
+         },
+         tx)
     }
 }
 
@@ -35,11 +40,15 @@ impl<C> specs::System<C> for FireControlSystem {
              w.write::<Mass>(),
              w.read_resource::<ActivePlayer>())
         });
+        let player = match firing.player() {
+            Some(p) if p == self.player => p,
+            _ => return,
+        };
+        let mut inserted = false;
         while let Ok(()) = self.queue.try_recv() {
-            let player = match firing.player() {
-                None => continue,
-                Some(p) => p,
-            };
+            if inserted {
+                continue; // Eat up any remaining signals
+            }
             let (eid, position) = {
                 // Can't insert into positions while the positions borrow is active:
                 let tank = match tanks.get(player.id()) {
@@ -67,6 +76,7 @@ impl<C> specs::System<C> for FireControlSystem {
                 (eid, position)
             }; // Borrow released here, now we can insert:
             positions.insert(eid, position);
+            inserted = true;
         }
     }
 }

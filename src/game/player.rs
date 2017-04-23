@@ -37,7 +37,6 @@ impl Players {
                 .with(tank::Tank::new())
                 .with(drawable)
                 .with(Position::new(x, terrain_height, normal_dir, 20.0))
-                .with(Velocity::new())
                 .build();
             players.push(Player {
                              player_number: (i as u8) + 1,
@@ -53,6 +52,10 @@ impl Players {
             .filter(|p| world.is_alive(p.tank_id))
             .cloned()
             .collect()
+    }
+
+    pub fn to_vec(&self) -> Vec<Player> {
+        self.players[..].to_vec()
     }
 }
 

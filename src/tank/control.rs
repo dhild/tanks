@@ -1,6 +1,6 @@
 use cgmath::{Deg, Rad};
 use cgmath::prelude::*;
-use game::ActivePlayer;
+use game::{ActivePlayer, Player};
 use specs;
 use std::sync::mpsc;
 use tank::Tank;
@@ -17,15 +17,17 @@ pub enum TankControl {
 
 #[derive(Debug)]
 pub struct TankControlSystem {
+    player: Player,
     queue: mpsc::Receiver<TankControl>,
     angle_adjustment: Option<Rad<f32>>,
     power_adjustment: Option<f32>,
 }
 
 impl TankControlSystem {
-    pub fn new() -> (TankControlSystem, mpsc::Sender<TankControl>) {
+    pub fn new(player: Player) -> (TankControlSystem, mpsc::Sender<TankControl>) {
         let (tx, rx) = mpsc::channel();
         (TankControlSystem {
+             player: player,
              queue: rx,
              angle_adjustment: None,
              power_adjustment: None,
@@ -49,8 +51,8 @@ impl<C> specs::System<C> for TankControlSystem {
             }
         }
         let player = match active.player() {
-            None => return,
-            Some(p) => p,
+            Some(p) if p == self.player => p,
+            _ => return, // Not our turn to fire
         };
         let mut tank = match tanks.get_mut(player.id()) {
             None => return,

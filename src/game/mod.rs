@@ -9,10 +9,12 @@ use std::time;
 use tank;
 use terrain;
 
+mod ai;
 mod controls;
 mod player;
 mod state;
 
+pub use self::ai::AiController;
 pub use self::controls::TankControls;
 pub use self::player::{Player, Players};
 pub use self::state::ActivePlayer;
@@ -69,15 +71,13 @@ fn setup_planner<W, D, F>(window: &mut W,
           F: gfx::Factory<D::Resources>,
           D::CommandBuffer: Send
 {
-    let terrain = planner
-        .mut_world()
-        .read_resource_now::<terrain::Terrain>();
-    let rtv = window.get_rtv();
-    let draw = DrawSystem::new(window.get_factory(), rtv, encoder_queue, &terrain);
-
-    let (fire_system, fire_control) = projectile::FireControlSystem::new();
-    let (tank_system, tank_control) = tank::TankControlSystem::new();
-    window.set_controls(TankControls::new(fire_control, tank_control));
+    let draw = {
+        let terrain = planner
+            .mut_world()
+            .read_resource_now::<terrain::Terrain>();
+        let rtv = window.get_rtv();
+        DrawSystem::new(window.get_factory(), rtv, encoder_queue, &terrain)
+    };
 
     let (game_state_system, results_receiver) = state::GameStateSystem::new();
 
@@ -91,10 +91,40 @@ fn setup_planner<W, D, F>(window: &mut W,
     planner.add_system(GravitySystem::new(), "gravity", 35);
     planner.add_system(explosion::ExplosionSystem::new(), "explosion", 35);
     planner.add_system(game_state_system, "game-state", 50);
-    planner.add_system(fire_system, "firing", 60);
-    planner.add_system(tank_system, "tank-control", 61);
+
+    let human_controls = create_controls(planner);
+    window.set_controls(human_controls);
 
     results_receiver
+}
+
+fn create_controls(planner: &mut Planner) -> TankControls {
+    let players = {
+        planner
+            .mut_world()
+            .read_resource_now::<Players>()
+            .to_vec()
+    };
+    let mut human_control = None;
+    for player in players {
+        let number = player.player_number();
+
+        let (fire_system, fire_control) = projectile::FireControlSystem::new(player);
+        let (tank_system, tank_control) = tank::TankControlSystem::new(player);
+        let controls = TankControls::new(fire_control, tank_control);
+
+        planner.add_system(fire_system, &format!("firing-{}", number), 60);
+        planner.add_system(tank_system, &format!("tank-control-{}", number), 61);
+
+        if number == 1 {
+            human_control = Some(controls);
+        } else {
+            info!("Player {} is computer-controlled", number);
+            let ai = AiController::new(player, controls);
+            planner.add_system(ai, &format!("ai-{}", number), 70);
+        }
+    }
+    human_control.unwrap()
 }
 
 fn dispatch_loop<W, D, F>(window: &mut W,

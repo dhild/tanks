@@ -9,7 +9,7 @@ pub struct Dimensions {
 }
 
 impl Dimensions {
-    pub fn new(window_width: u32, window_height: u32) -> Dimensions {
+    pub fn new(_window_width: u32, _window_height: u32) -> Dimensions {
         Dimensions {
             width: 1000,
             height: 1000,
@@ -61,15 +61,6 @@ impl specs::Component for Position {
 pub struct Velocity {
     pub velocity: Vector2<f32>,
     pub angular_velocity: Rad<f32>,
-}
-
-impl Velocity {
-    pub fn new() -> Velocity {
-        Velocity {
-            velocity: Vector2::zero(),
-            angular_velocity: Rad::zero(),
-        }
-    }
 }
 
 impl<I: Into<Vector2<f32>>> From<I> for Velocity {
