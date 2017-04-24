@@ -1,5 +1,8 @@
+use cgmath::Deg;
+use cgmath::prelude::*;
 use game::{ActivePlayer, Player, TankControls};
-use physics::Position;
+use physics::{GRAVITY, Position};
+use projectile::{POWER_MIN, POWER_SCALE};
 use specs::{self, Join};
 use tank::Tank;
 
@@ -21,12 +24,79 @@ impl AiController {
 
     fn align(&mut self,
              _target: specs::Entity,
-             _target_pos: &Position,
-             _self_pos: &Position)
-             -> bool {
-        // TODO: Align to target
-        true
+             target_pos: &Position,
+             ai_tank: &Tank,
+             ai_pos: &Position) {
+        let distance = target_pos.position - ai_pos.position;
+        debug!("Aiming for {:?}", distance);
+        let (y_end, peaked) =
+            calc_end_y(distance.x, ai_tank.power_level, ai_tank.barrel_orient, 75.0);
+
+        if !peaked {
+            if distance.x < 0.0 {
+                self.controls.angle_increase();
+            } else {
+                self.controls.angle_decrease();
+            }
+            self.controls.power_increase();
+            return;
+        }
+
+        let y_diff = y_end - distance.y;
+        let mut changed = false;
+
+        let (y2, p2) = calc_end_y(distance.x,
+                                  ai_tank.power_level + 0.05,
+                                  ai_tank.barrel_orient,
+                                  75.0);
+        if p2 && (y2 - distance.y).abs() < y_diff {
+            self.controls.power_increase();
+            changed = true;
+        } else {
+            let (y2, p2) = calc_end_y(distance.x,
+                                      ai_tank.power_level - 0.05,
+                                      ai_tank.barrel_orient,
+                                      75.0);
+            if p2 && (y2 - distance.y).abs() < y_diff {
+                self.controls.power_decrease();
+                changed = true;
+            } else {
+                self.controls.angle_stop();
+            }
+        }
+
+        let (y2, p2) = calc_end_y(distance.x,
+                                  ai_tank.power_level,
+                                  ai_tank.barrel_orient + Deg(0.5),
+                                  75.0);
+        if p2 && (y2 - distance.y).abs() < y_diff {
+            self.controls.angle_increase();
+            changed = true;
+        } else {
+            let (y2, p2) = calc_end_y(distance.x,
+                                      ai_tank.power_level,
+                                      ai_tank.barrel_orient - Deg(0.5),
+                                      75.0);
+            if p2 && (y2 - distance.y).abs() < y_diff {
+                self.controls.angle_decrease();
+                changed = true;
+            } else {
+                self.controls.power_stop();
+            }
+        }
+
+        if !changed {
+            self.controls.fire();
+        }
     }
+}
+
+fn calc_end_y(x: f32, power_level: f32, theta: Deg<f32>, mass: f32) -> (f32, bool) {
+    let v = POWER_MIN + POWER_SCALE * power_level;
+    let t = x / (v * theta.sin());
+    let y_end = 0.5 * mass * GRAVITY * t * t + v * t * theta.cos();
+    let v_y_end = mass * GRAVITY * t + v * theta.cos();
+    (y_end, v_y_end < 0.0)
 }
 
 impl<C> specs::System<C> for AiController {
@@ -43,7 +113,11 @@ impl<C> specs::System<C> for AiController {
             _ => return, // Not our turn!
         }
 
-        let self_position = match positions.get(self.player.id()) {
+        let ai_tank = match tanks.get(self.player.id()) {
+            Some(t) => t,
+            None => return, // This tank doesn't exist anymore...
+        };
+        let ai_position = match positions.get(self.player.id()) {
             Some(t) => t,
             None => return, // This tank doesn't exist anymore...
         };
@@ -68,9 +142,8 @@ impl<C> specs::System<C> for AiController {
         let target_pos = positions
             .get(target)
             .expect("Missing Position component for Tank");
+        debug!("Targeting {:?} at {:?}", target, target_pos);
 
-        if self.align(target, target_pos, self_position) {
-            self.controls.fire();
-        }
+        self.align(target, target_pos, ai_tank, ai_position)
     }
 }

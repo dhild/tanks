@@ -59,8 +59,8 @@ static VERTICES_BODY: [Vertex; 4] = [Vertex { pos: [-0.8, 0.5] },
                                      Vertex { pos: [1.0, 0.0] }];
 static VERTICES_BARREL: [Vertex; 4] = [Vertex { pos: [-0.1, 1.2] },
                                        Vertex { pos: [0.1, 1.2] },
-                                       Vertex { pos: [-0.1, 0.25] },
-                                       Vertex { pos: [0.1, 0.25] }];
+                                       Vertex { pos: [-0.1, 0.15] },
+                                       Vertex { pos: [0.1, 0.15] }];
 const SHADER_VERT: &'static [u8] = include_bytes!("tank.v.glsl");
 const SHADER_FRAG: &'static [u8] = include_bytes!("tank.f.glsl");
 

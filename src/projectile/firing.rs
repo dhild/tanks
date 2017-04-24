@@ -6,6 +6,9 @@ use specs;
 use std::sync::mpsc;
 use tank::Tank;
 
+pub const POWER_MIN: f32 = 150.0;
+pub const POWER_SCALE: f32 = 100.0;
+
 #[derive(Debug)]
 pub struct FireControlSystem {
     player: Player,
@@ -59,8 +62,8 @@ impl<C> specs::System<C> for FireControlSystem {
                     None => continue,
                     Some(p) => p,
                 };
-                let power = 150.0 + 100.0 * tank.power_level;
-                let vx = power * -tank.barrel_orient.sin();
+                let power = POWER_MIN + (POWER_SCALE * tank.power_level);
+                let vx = power * tank.barrel_orient.sin();
                 let vy = power * tank.barrel_orient.cos();
                 let velocity = Velocity::from([vx, vy]);
                 let position = Position::new(tank_pos.position.x, tank_pos.position.y,

@@ -1,4 +1,4 @@
-use cgmath::Rad;
+use cgmath::Deg;
 use cgmath::prelude::*;
 use rand::{self, Rng};
 use physics::Dimensions;
@@ -41,7 +41,7 @@ impl Terrain {
             }
         }
     }
-    pub fn get_normal_dir(&self, x: f32) -> Rad<f32> {
+    pub fn get_normal_dir(&self, x: f32) -> Deg<f32> {
         if x < 1.0 {
             self.get_normal_dir(1.0)
         } else if x > (self.heightmap.len() - 2) as f32 {
@@ -50,7 +50,7 @@ impl Terrain {
             let i = x.floor() as usize;
             let y0 = self.heightmap[i] as f32;
             let y1 = self.heightmap[i + 1] as f32;
-            Rad::atan(y1 - y0)
+            -Deg::atan(y1 - y0) // + Deg::turn_div_4() // Angle is measured from vertical axis
         }
     }
 }

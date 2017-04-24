@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Point2, Rad, Vector2, Vector3};
+use cgmath::{Matrix4, Point2, Deg, Vector2, Vector3};
 use cgmath::prelude::*;
 use specs;
 
@@ -33,12 +33,12 @@ impl Dimensions {
 #[derive(Debug,Clone)]
 pub struct Position {
     pub position: Point2<f32>,
-    pub orient: Rad<f32>,
+    pub orient: Deg<f32>,
     pub scale: f32,
 }
 
 impl Position {
-    pub fn new(x: f32, y: f32, angle: Rad<f32>, scale: f32) -> Position {
+    pub fn new(x: f32, y: f32, angle: Deg<f32>, scale: f32) -> Position {
         Position {
             position: Point2::new(x, y),
             orient: angle,
@@ -49,7 +49,7 @@ impl Position {
     pub fn model_to_world(&self) -> Matrix4<f32> {
         Matrix4::from_translation(Vector3::new(self.position.x, self.position.y, 0.0)) *
         Matrix4::from_nonuniform_scale(self.scale, self.scale, 1.0) *
-        Matrix4::from_angle_z(self.orient)
+        Matrix4::from_angle_z(-self.orient)
     }
 }
 
@@ -60,14 +60,14 @@ impl specs::Component for Position {
 #[derive(Debug)]
 pub struct Velocity {
     pub velocity: Vector2<f32>,
-    pub angular_velocity: Rad<f32>,
+    pub angular_velocity: Deg<f32>,
 }
 
 impl<I: Into<Vector2<f32>>> From<I> for Velocity {
     fn from(v: I) -> Velocity {
         Velocity {
             velocity: v.into(),
-            angular_velocity: Rad::zero(),
+            angular_velocity: Deg::zero(),
         }
     }
 }

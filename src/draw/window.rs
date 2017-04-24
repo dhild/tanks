@@ -86,8 +86,8 @@ impl Window<gfx_device_gl::Device, gfx_device_gl::Factory> for GlutinWindow {
                 Closed |
                 KeyboardInput(_, _, Some(Escape)) => return Some(QuitStatus::Quit),
                 KeyboardInput(Pressed, _, Some(Space)) => controls.fire(),
-                KeyboardInput(Pressed, _, Some(Left)) => controls.angle_increase(),
-                KeyboardInput(Pressed, _, Some(Right)) => controls.angle_decrease(),
+                KeyboardInput(Pressed, _, Some(Left)) => controls.angle_decrease(),
+                KeyboardInput(Pressed, _, Some(Right)) => controls.angle_increase(),
                 KeyboardInput(Released, _, Some(Left)) |
                 KeyboardInput(Released, _, Some(Right)) => controls.angle_stop(),
                 KeyboardInput(Pressed, _, Some(Up)) => controls.power_increase(),

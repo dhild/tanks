@@ -1,4 +1,4 @@
-use cgmath::{Deg, Rad};
+use cgmath::Deg;
 use cgmath::prelude::*;
 use game::{ActivePlayer, Player};
 use specs;
@@ -19,7 +19,7 @@ pub enum TankControl {
 pub struct TankControlSystem {
     player: Player,
     queue: mpsc::Receiver<TankControl>,
-    angle_adjustment: Option<Rad<f32>>,
+    angle_adjustment: Option<Deg<f32>>,
     power_adjustment: Option<f32>,
 }
 
@@ -42,8 +42,8 @@ impl<C> specs::System<C> for TankControlSystem {
             arg.fetch(|w| (w.write::<Tank>(), w.read_resource::<ActivePlayer>()));
         while let Ok(control) = self.queue.try_recv() {
             match control {
-                TankControl::AngleDecreasing => self.angle_adjustment = Some(Rad::from(Deg(-0.5))),
-                TankControl::AngleIncreasing => self.angle_adjustment = Some(Rad::from(Deg(0.5))),
+                TankControl::AngleDecreasing => self.angle_adjustment = Some(Deg(-0.5)),
+                TankControl::AngleIncreasing => self.angle_adjustment = Some(Deg(0.5)),
                 TankControl::AngleStop => self.angle_adjustment = None,
                 TankControl::PowerDecreasing => self.power_adjustment = Some(-0.05),
                 TankControl::PowerIncreasing => self.power_adjustment = Some(0.05),
@@ -67,8 +67,7 @@ impl<C> specs::System<C> for TankControlSystem {
         }
         if let Some(power) = self.power_adjustment {
             tank.power_level += power;
-            tank.power_level = tank.power_level.min(1.0);
-            tank.power_level = tank.power_level.max(0.0);
+            tank.power_level = tank.power_level.min(1.0).max(0.0);
             debug!("Tank {} power updated: {:?}",
                    player.player_number(),
                    tank.power_level);

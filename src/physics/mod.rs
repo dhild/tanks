@@ -9,4 +9,4 @@ pub type Planner = specs::Planner<Delta>;
 
 pub use self::components::*;
 pub use self::inertia::InertiaSystem;
-pub use self::gravity::GravitySystem;
+pub use self::gravity::{GRAVITY, GravitySystem};

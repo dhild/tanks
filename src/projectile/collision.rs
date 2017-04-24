@@ -1,4 +1,4 @@
-use cgmath::Rad;
+use cgmath::Deg;
 use cgmath::prelude::*;
 use explosion;
 use physics::{Dimensions, Position};
@@ -59,7 +59,7 @@ impl<C> specs::System<C> for CollisionSystem {
         }
         for p in to_create {
             let id = arg.create_pure();
-            positions.insert(id, Position::new(p.x, p.y, Rad::zero(), 50.0));
+            positions.insert(id, Position::new(p.x, p.y, Deg::zero(), 50.0));
             explosives.insert(id, explosion::Explosion::new());
             drawables.insert(id, explosion::Drawable::new());
         }
