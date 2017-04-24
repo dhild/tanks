@@ -24,7 +24,7 @@ impl Players {
         };
         let mut rng = rand::thread_rng();
         let mut players = Vec::new();
-        for (i, color) in COLORS.iter().enumerate() {
+        for (i, color) in COLORS.iter().enumerate().take(count) {
             let x = (i as f32 * dx) + rng.gen_range(dx / 2.0, 3.0 * dx / 2.0);
             let drawable = tank::Drawable::new(*color);
 
