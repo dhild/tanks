@@ -8,15 +8,11 @@ use terrain::Terrain;
 #[derive(Debug)]
 pub struct Drawable {
     bounds: Bounds,
-    base: Base,
 }
 
 impl Drawable {
     pub fn new() -> Drawable {
-        Drawable {
-            bounds: Bounds { transform: [[0.0; 4]; 4] },
-            base: Base { base_y: -1.0 },
-        }
+        Drawable { bounds: Bounds { transform: [[0.0; 4]; 4] } }
     }
 
     pub fn update(&mut self, world_to_clip: &Matrix4<f32>) {
@@ -37,13 +33,8 @@ gfx_defines!{
         transform: [[f32; 4]; 4] = "transform",
     }
 
-    constant Base {
-        base_y: f32 = "base_y",
-    }
-
     pipeline pipe {
         vbuf: gfx::VertexBuffer<Vertex> = (),
-        base: gfx::ConstantBuffer<Base> = "Base",
         bounds: gfx::ConstantBuffer<Bounds> = "Bounds",
         out: gfx::RenderTarget<ColorFormat> = "out_color",
     }
@@ -53,10 +44,22 @@ impl Vertex {
     pub fn new(x: f32, y: f32) -> Vertex {
         Vertex { pos: [x, y] }
     }
+
+    fn generate(terrain: &Terrain) -> Vec<Vertex> {
+        terrain
+            .heightmap
+            .iter()
+            .enumerate()
+            .map(|(i, h)| {
+                     vec![Vertex::new(i as f32, *h as f32),
+                          Vertex::new(i as f32, 0.0)]
+                 })
+            .flat_map(|v| v.into_iter())
+            .collect()
+    }
 }
 
 const SHADER_VERT: &'static [u8] = include_bytes!("terrain.v.glsl");
-const SHADER_GEOM: &'static [u8] = include_bytes!("terrain.g.glsl");
 const SHADER_FRAG: &'static [u8] = include_bytes!("terrain.f.glsl");
 
 pub struct DrawSystem<R: gfx::Resources> {
@@ -71,31 +74,21 @@ impl<R: gfx::Resources> DrawSystem<R> {
         where F: gfx::Factory<R>
     {
         use gfx::traits::FactoryExt;
-        let vertices: Vec<Vertex> = terrain
-            .heightmap
-            .iter()
-            .enumerate()
-            .map(|(i, h)| Vertex::new(i as f32, *h as f32))
-            .collect();
 
-        let shaders = {
-            let vert = factory.create_shader_vertex(SHADER_VERT).unwrap();
-            let geom = factory.create_shader_geometry(SHADER_GEOM).unwrap();
-            let frag = factory.create_shader_pixel(SHADER_FRAG).unwrap();
-            gfx::ShaderSet::Geometry(vert, geom, frag)
-        };
+        let vertices = Vertex::generate(terrain);
+
+        let program = factory.link_program(SHADER_VERT, SHADER_FRAG).unwrap();
 
         let pso = factory
-            .create_pipeline_state(&shaders,
-                                   gfx::Primitive::LineStrip,
-                                   gfx::state::Rasterizer::new_fill(),
-                                   pipe::new())
+            .create_pipeline_from_program(&program,
+                                          gfx::Primitive::TriangleStrip,
+                                          gfx::state::Rasterizer::new_fill(),
+                                          pipe::new())
             .unwrap();
 
         let (vbuf, slice) = factory.create_vertex_buffer_with_slice(&vertices[..], ());
         let data = pipe::Data {
             vbuf: vbuf,
-            base: factory.create_constant_buffer(1),
             bounds: factory.create_constant_buffer(1),
             out: rtv,
         };
@@ -107,7 +100,6 @@ impl<R: gfx::Resources> DrawSystem<R> {
         where C: gfx::CommandBuffer<R>
     {
         encoder.update_constant_buffer(&self.bundle.data.bounds, &drawable.bounds);
-        encoder.update_constant_buffer(&self.bundle.data.base, &drawable.base);
         self.bundle.encode(encoder);
     }
 }
