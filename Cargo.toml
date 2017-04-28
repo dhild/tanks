@@ -13,6 +13,7 @@ glutin = "0.7"
 cgmath = "0.12"
 specs = "0.8"
 rand = "0.3"
+rusttype = "0.2"
 
 [features]
 default = []

@@ -1,0 +1,106 @@
+use draw::ColorFormat;
+use gfx;
+use physics::Dimensions;
+use rusttype as rtype;
+use specs;
+
+#[derive(Debug)]
+pub struct Drawable {}
+
+impl Drawable {
+    pub fn new() -> Drawable {
+        Drawable {}
+    }
+}
+
+impl specs::Component for Drawable {
+    type Storage = specs::VecStorage<Drawable>;
+}
+
+gfx_defines!{
+    vertex Vertex {
+        pos: [f32; 2] = "position",
+    }
+
+    constant Locals {
+        transform: [[f32; 4]; 4] = "transform",
+        color: [f32; 3] = "color",
+    }
+
+    pipeline pipe {
+        vbuf: gfx::VertexBuffer<Vertex> = (),
+        locals: gfx::ConstantBuffer<Locals> = "Locals",
+        out: gfx::RenderTarget<ColorFormat> = "out_color",
+    }
+}
+
+const SHADER_VERT: &'static [u8] = include_bytes!("text.glslv");
+const SHADER_FRAG: &'static [u8] = include_bytes!("text.glslf");
+
+pub struct DrawSystem<R: gfx::Resources> {
+    slice_body: gfx::Slice<R>,
+    slice_barrel: gfx::Slice<R>,
+    pso: gfx::pso::PipelineState<R, pipe::Meta>,
+    data: pipe::Data<R>,
+}
+
+impl<R: gfx::Resources> DrawSystem<R> {
+    pub fn new<F>(factory: &mut F,
+                  rtv: gfx::handle::RenderTargetView<R, ColorFormat>)
+                  -> DrawSystem<R>
+        where F: gfx::Factory<R>
+    {
+        use gfx::traits::FactoryExt;
+        let program = factory.link_program(SHADER_VERT, SHADER_FRAG).unwrap();
+        let pso = factory
+            .create_pipeline_from_program(&program,
+                                          gfx::Primitive::TriangleStrip,
+                                          gfx::state::Rasterizer::new_fill(),
+                                          pipe::new())
+            .unwrap();
+        let vertices = {
+            let mut v = Vec::new();
+            v.extend_from_slice(&VERTICES_BODY);
+            v.extend_from_slice(&VERTICES_BARREL);
+            v
+        };
+        let (vbuf, slice) = factory.create_vertex_buffer_with_slice(&vertices[..], ());
+        let (slice_body, slice_barrel) = slice.split_at(4);
+        let data = pipe::Data {
+            vbuf: vbuf,
+            locals: factory.create_constant_buffer(1),
+            out: rtv,
+        };
+        DrawSystem {
+            slice_body: slice_body,
+            slice_barrel: slice_barrel,
+            pso: pso,
+            data: data,
+        }
+    }
+
+    pub fn draw<C: gfx::CommandBuffer<R>>(&self,
+                                          drawable: &Drawable,
+                                          encoder: &mut gfx::Encoder<R, C>) {
+    }
+}
+
+#[derive(Debug)]
+pub struct PreDrawSystem;
+
+impl PreDrawSystem {
+    pub fn new() -> PreDrawSystem {
+        PreDrawSystem {}
+    }
+}
+
+impl<C> specs::System<C> for PreDrawSystem {
+    fn run(&mut self, arg: specs::RunArg, _: C) {
+        use specs::Join;
+        let mut drawables = arg.fetch(|w| w.write::<Drawable>());
+
+        for d in (&mut drawables).join() {
+            d.update(&world_to_clip, p, t);
+        }
+    }
+}

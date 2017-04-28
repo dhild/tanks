@@ -9,6 +9,7 @@ extern crate specs;
 extern crate gfx_device_gl;
 extern crate glutin;
 extern crate gfx_window_glutin;
+extern crate rusttype;
 
 mod draw;
 mod explosion;
