@@ -18,6 +18,7 @@ mod physics;
 mod projectile;
 mod tank;
 mod terrain;
+mod text;
 
 use game::QuitStatus::*;
 

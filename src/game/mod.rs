@@ -8,6 +8,7 @@ use std::sync::mpsc;
 use std::time;
 use tank;
 use terrain;
+use text;
 
 mod ai;
 mod controls;
@@ -53,6 +54,8 @@ fn setup_world(world: &mut specs::World, viewport_size: (u32, u32)) {
     world.register::<projectile::Projectile>();
     world.register::<explosion::Explosion>();
     world.register::<explosion::Drawable>();
+    world.register::<text::Text>();
+    world.register::<text::Drawable>();
 
     let dimensions = Dimensions::new(viewport_size.0, viewport_size.1);
     world.add_resource(terrain::generate(&dimensions, 10));
@@ -86,6 +89,7 @@ fn setup_planner<W, D, F>(window: &mut W,
     planner.add_system(tank::PreDrawSystem::new(), "draw-prep-tank", 15);
     planner.add_system(projectile::PreDrawSystem::new(), "draw-prep-projectile", 15);
     planner.add_system(explosion::PreDrawSystem::new(), "draw-prep-explosion", 15);
+    planner.add_system(text::PreDrawSystem::new(), "draw-prep-text", 15);
     planner.add_system(projectile::CollisionSystem::new(), "collide-projectile", 20);
     planner.add_system(InertiaSystem::new(), "inertia", 30);
     planner.add_system(GravitySystem::new(), "gravity", 35);

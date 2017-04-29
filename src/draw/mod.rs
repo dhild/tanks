@@ -1,7 +1,6 @@
 use gfx;
 
 mod renderer;
-mod text;
 mod traits;
 mod system;
 mod window;

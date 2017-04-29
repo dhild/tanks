@@ -4,13 +4,14 @@ in vec2 tc;
 
 out vec4 out_color;
 
-uniform sampler2D fontTexture;
+uniform sampler2D font;
 
-uniform Color {
+uniform Locals {
+  mat4 transform;
   vec4 color;
 };
 
 void main() {
-  float brightness = texture(fontTexture, tc).r;
+  float brightness = texture(font, tc).r;
   out_color = brightness * color;
 }
