@@ -8,7 +8,7 @@ pub use self::draw::{Drawable, DrawSystem, PreDrawSystem};
 pub struct Text {
     pub text: String,
     pub screen_position: Point2<f32>,
-    pub height: f32,
+    pub scale: f32,
 }
 
 impl specs::Component for Text {

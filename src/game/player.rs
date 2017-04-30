@@ -1,8 +1,10 @@
+use cgmath::Point2;
 use physics::*;
 use rand::{self, Rng};
 use specs;
 use tank;
 use terrain;
+use text;
 
 #[derive(Debug)]
 pub struct Players {
@@ -37,6 +39,15 @@ impl Players {
                 .with(tank::Tank::new())
                 .with(drawable)
                 .with(Position::new(x, terrain_height, normal_dir, 20.0))
+                .with(text::Drawable::new([1.0, 1.0, 1.0]))
+                .with(text::Text {
+                          text: format!("Player {}", i + 1),
+                          screen_position: Point2 {
+                              x: x - 25.0,
+                              y: terrain_height + 50.0,
+                          },
+                          scale: 0.5,
+                      })
                 .build();
             players.push(Player {
                              player_number: (i as u8) + 1,
